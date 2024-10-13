@@ -7,8 +7,6 @@
 #define MAX_CHAR_PER_LINE 25
 #define HEIGHT 7 // 8 pixels tall, starts from 0
 #define NORMAL_FONT u8g2_font_5x7_tf
-#define LINE_FEED 10
-#define CARRIAGE_RETURN 13
 
 U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST); // SW conflicts with SD SPI
 
@@ -57,17 +55,4 @@ void OLED_print(String message, int row) {
         u8g2.drawUTF8(col, (row + 1) * (HEIGHT - 1) + row, message.c_str());
         // TODO: Test amount of rows with this newly added gap between rows
     } while (u8g2.nextPage());
-}
-
-String readLine(SdFile& subs) {
-    int data = 0;
-    String buf;
-
-    do {
-        data = subs.read();
-        buf += char(data);
-    } while (data >= 0 && (data != LINE_FEED && data != CARRIAGE_RETURN));
-    subs.read(); // Advance to next line
-
-    return buf;
 }
