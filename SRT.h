@@ -93,6 +93,7 @@ void displaySubs(SdFile& subs) {
         char ch;
 
         while ((micros() - startTime) < diff) {
+            bool twice = false;
             input = checkButtons();
 
             switch (input) {
@@ -110,27 +111,33 @@ void displaySubs(SdFile& subs) {
                     break;
 
                 case PB_LEFT:
-                    if (subs.position() > INITIAL_SAFETY_BARRIER) {
-                        // Jumps back to the beginning of the previous SRT block
-                        // We're at the end of the current block so we have to go back twice
-                        // because the reads are done before this
-                        bool twice = false;
+                    // Jumps back to the beginning of the previous SRT block
+                    // We're at the end of the current block so we have to go back twice
+                    // because the reads are done before this
+                    twice = false;
+                    if ((subs.position() - 4) >= 0) {
                         subs.seek(subs.position() - 4);
-                        while (newlines < 2) {
+                        while (newlines < 2 and subs.position() != 0) {
                             ch = subs.read();
                             if (ch == LINE_FEED) {
                                 ++newlines;
                             } else if (ch != CARRIAGE_RETURN) {
                                 newlines = 0;
                             }
-                            subs.seek(subs.position() - 2);
+                            if ((subs.position() - 2) >= 0) {
+                                subs.seek(subs.position() - 2);
+                            } else {
+                                break;
+                            }
 
                             if (newlines >= 2 && !twice) {
                                 twice = true;
                                 newlines = 0;
                             }
                         }
-                        subs.seek(subs.position() + 4);
+                        if (subs.position() != 0) {
+                            subs.seek(subs.position() + 4);
+                        }
 
                         startTime = diff; // Break out of wait
                         delay(100);
