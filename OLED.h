@@ -16,17 +16,17 @@ void u8g2_begin() {
 }
 
 void OLED_print(String message) {
-    int col = 0;
-    int row = 0;
+    unsigned int col = 0;
+    unsigned int row = 0;
     float len = message.length();
 
     u8g2.clearDisplay();
 
     // If row isn't specified, automatically split message
-    int rows = ceil(len / MAX_CHAR_PER_LINE);
-    for (int i = 0; i < rows; ++i) {
-        int from = MAX_CHAR_PER_LINE * i;
-        int to = MAX_CHAR_PER_LINE * (i + 1);
+    unsigned int rows = ceil(len / MAX_CHAR_PER_LINE);
+    for (unsigned int i = 0; i < rows; ++i) {
+        unsigned int from = MAX_CHAR_PER_LINE * i;
+        unsigned int to = MAX_CHAR_PER_LINE * (i + 1);
         String truncated_message = message.substring(from, to);
 
         // If line starts with a space
@@ -45,9 +45,8 @@ void OLED_print(String message) {
     }
 }
 
-void OLED_print(String message, int row) {
-    int col = 0;
-    float len = message.length();
+void OLED_print(String message, unsigned int row) {
+    unsigned int col = 0;
 
     do {
         u8g2.setFont(NORMAL_FONT);

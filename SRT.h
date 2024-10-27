@@ -1,9 +1,13 @@
 #define LINE_FEED 10
 #define CARRIAGE_RETURN 13
-#define FILE_POSITIONS_SIZE 2000
-#define INITIAL_SAFETY_BARRIER 200 // Crashes when you seek before the beginning of the file
+#define PERIODIC_SIZE 2000
 
-String readLine(SdFile& subs) {
+struct times {
+    unsigned int from_time;
+    float delay_time;
+};
+
+String read_next_line(SdFile& subs) {
     int data = 0;
     String buf;
 
@@ -16,24 +20,64 @@ String readLine(SdFile& subs) {
     return buf;
 }
 
-float calculateDiff(String timestamps) {
-    // Example: 00:01:11,571 --> 00:01:14,359
-    // Returns the time difference in milliseconds
-    int from_times[4];
-    int to_times[4];
+void go_to_prev_line(SdFile& subs) {
+    // Keep going back until two line feeds
+    int data = 0;
+    unsigned int linefeed_count = 0;
 
+    while (true) {
+        if (subs.position() <= 2) {
+            return;
+        }
+
+        data = subs.read();
+        if (data == LINE_FEED) {
+            ++linefeed_count;
+            if (linefeed_count == 6) {
+                return;
+            }
+        }
+
+        subs.seek(subs.position() - 2);
+    }
+    // subs.read(); // Advance to next line
+}
+
+unsigned int calculate_from_time(String timestamps, unsigned int from_times[4]) {
+    // I seperated this into another function 
+    // because I'm gathering all start times upon file load
+    // and this is used when calculating the diff when displaying subs
     from_times[0] = timestamps.substring(0, 2).toInt();
     from_times[1] = timestamps.substring(3, 5).toInt();
     from_times[2] = timestamps.substring(6, 8).toInt();
     from_times[3] = timestamps.substring(9, 12).toInt();
+
+    unsigned int from_time = (from_times[0] * 3600000) +
+        (from_times[1] * 60000) +
+        (from_times[2] * 1000) +
+        (from_times[3]);
+
+    return from_time;
+}
+
+struct times calculateDiff(String timestamps) {
+    // Example: 00:01:11,571 --> 00:01:14,359
+    // Returns the time difference in milliseconds
+    unsigned int from_times[4];
+    unsigned int from_time = calculate_from_time(timestamps, from_times);
+    unsigned int to_times[4];
 
     to_times[0] = timestamps.substring(17, 19).toInt();
     to_times[1] = timestamps.substring(20, 22).toInt();
     to_times[2] = timestamps.substring(23, 25).toInt();
     to_times[3] = timestamps.substring(26, 29).toInt();
 
-    int diff = (to_times[0] - from_times[0]) * 3600000 + (to_times[1] - from_times[1]) * 60000 + (to_times[2] - from_times[2]) * 1000 + (to_times[3] - from_times[3]);
-    return diff;
+    float diff = (to_times[0] - from_times[0]) * 3600000 +
+        (to_times[1] - from_times[1]) * 60000 +
+        (to_times[2] - from_times[2]) * 1000 +
+        (to_times[3] - from_times[3]);
+
+    return {from_time, diff};
 }
 
 String cleanFormatting(String message) {
@@ -50,21 +94,21 @@ String cleanFormatting(String message) {
     return message;
 }
 
-void displaySubs(SdFile& subs) {
+void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_pos[PERIODIC_SIZE]) {
     // SRT specs
     // https://docs.fileformat.com/video/srt/
 
     float startTime = micros();
 
     // Index
-    int subsIndex = readLine(subs).toInt();
+    read_next_line(subs);
 
     // Timestamp
-    String timestamps = readLine(subs);
-    float delayTime = calculateDiff(timestamps);  // ms
+    String timestamps = read_next_line(subs);
+    times current_times = calculateDiff(timestamps); // ms
 
     // Timestamp for Pause
-    int first_space = timestamps.indexOf(" ");
+    unsigned int first_space = timestamps.indexOf(" ");
     String first_time = timestamps.substring(0, first_space);
     int gap = MAX_CHAR_PER_LINE - first_time.length() - 2;
     for (int i = 0; i < gap; ++i) {
@@ -77,20 +121,19 @@ void displaySubs(SdFile& subs) {
     String message;
     String currentLine;
     do {
-        currentLine = readLine(subs);
+        currentLine = read_next_line(subs);
         message += currentLine + " ";
     } while (currentLine != "\r");
     message = cleanFormatting(message);
     OLED_print(message);
 
     // Account for computation time for message duration
-    float diff = (delayTime * 1000) - ((micros() - startTime)); // us
+    float diff = (current_times.delay_time * 1000) - ((micros() - startTime)); // us
 
     // Allow user to go back and forth one message and pause
     if (diff > 0) {
         int input = 0;
         int newlines = 0;
-        char ch;
 
         while ((micros() - startTime) < diff) {
             bool twice = false;
@@ -111,45 +154,71 @@ void displaySubs(SdFile& subs) {
                     break;
 
                 case PB_LEFT:
-                    // Jumps back to the beginning of the previous SRT block
-                    // We're at the end of the current block so we have to go back twice
-                    // because the reads are done before this
-                    twice = false;
-                    if ((subs.position() - 4) >= 0) {
-                        subs.seek(subs.position() - 4);
-                        while (newlines < 2 and subs.position() != 0) {
-                            ch = subs.read();
-                            if (ch == LINE_FEED) {
-                                ++newlines;
-                            } else if (ch != CARRIAGE_RETURN) {
-                                newlines = 0;
-                            }
-                            if ((subs.position() - 2) >= 0) {
-                                subs.seek(subs.position() - 2);
-                            } else {
-                                break;
-                            }
+                    // TODO: Pressing back on first subtitle advances it instead
 
-                            if (newlines >= 2 && !twice) {
-                                twice = true;
-                                newlines = 0;
-                            }
+                    // Go to prev subtitles
+                    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
+                        if (current_times.from_time == periodic_times[i]) {
+                            Serial.println(periodic_pos[i]);
+                            subs.seek(periodic_pos[i - 1]);
+                            break;
                         }
-                        if (subs.position() != 0) {
-                            subs.seek(subs.position() + 4);
-                        }
-
-                        startTime = diff; // Break out of wait
-                        delay(100);
                     }
+
+                    startTime = diff; // Break out of wait
+                    delay(100); // To avoid double presses
                     break;
 
                 case PB_RIGHT:
                     // Jump to next SRT block
                     // We're already at the next block because the reads are done before this
                     startTime = diff;
-                    delay(100);
+                    delay(100); // To avoid double presses
+                    break;
             }
         }
     }
+}
+
+unsigned int count_lines(SdFile& subs) {
+    unsigned int amount_of_lines = 0;
+    while (subs.available()) {
+        read_next_line(subs);
+        ++amount_of_lines;
+    }
+
+    subs.seek(0);
+    return amount_of_lines;
+}
+
+void gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
+    // Take times and pos of each segment and places them in their respective arrays
+    unsigned int periodic_idx = 0;
+    unsigned int current_line = 0;
+
+    while (current_line < amount_of_lines) {
+        // Index
+        periodic_pos[periodic_idx] = subs.position();
+        read_next_line(subs);
+        ++current_line;
+
+        // Timestamp
+        String timestamps = read_next_line(subs);
+        ++current_line;
+
+        // Get start timestamp as an int
+        unsigned int from_times[4];
+        unsigned int from_time = calculate_from_time(timestamps, from_times);
+        periodic_times[periodic_idx] = from_time;
+        ++periodic_idx;
+
+        // Progress the file position to the next segment
+        String currentLine;
+        do {
+            currentLine = read_next_line(subs);
+            ++current_line;
+        } while (currentLine != "\r");
+    }
+
+    subs.seek(0);
 }

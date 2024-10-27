@@ -10,7 +10,7 @@ void redrawFiles(String files[MAX_FILES], int filesCount) {
 
 void bubbleSort(String files[MAX_FILES], int filesCount) {
     bool good = false;
-    int char_pos = 0;
+    unsigned int char_pos = 0;
     bool clean = false;
     String temp;
 
