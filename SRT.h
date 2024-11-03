@@ -2,8 +2,10 @@
 #define CARRIAGE_RETURN 13
 #define PERIODIC_SIZE 2000
 
+void(* resetFunc) (void) = 0;//declare reset function at address 0
+                             //
 struct times {
-    unsigned int from_time;
+    long from_time;
     float delay_time;
 };
 
@@ -43,7 +45,7 @@ void go_to_prev_line(SdFile& subs) {
     // subs.read(); // Advance to next line
 }
 
-unsigned int calculate_from_time(String timestamps, unsigned int from_times[4]) {
+long calculate_from_time(String timestamps, long from_times[4]) {
     // I seperated this into another function 
     // because I'm gathering all start times upon file load
     // and this is used when calculating the diff when displaying subs
@@ -52,7 +54,7 @@ unsigned int calculate_from_time(String timestamps, unsigned int from_times[4]) 
     from_times[2] = timestamps.substring(6, 8).toInt();
     from_times[3] = timestamps.substring(9, 12).toInt();
 
-    unsigned int from_time = (from_times[0] * 3600000) +
+    long from_time = (from_times[0] * 3600000) +
         (from_times[1] * 60000) +
         (from_times[2] * 1000) +
         (from_times[3]);
@@ -63,9 +65,9 @@ unsigned int calculate_from_time(String timestamps, unsigned int from_times[4]) 
 struct times calculateDiff(String timestamps) {
     // Example: 00:01:11,571 --> 00:01:14,359
     // Returns the time difference in milliseconds
-    unsigned int from_times[4];
-    unsigned int from_time = calculate_from_time(timestamps, from_times);
-    unsigned int to_times[4];
+    long from_times[4];
+    long from_time = calculate_from_time(timestamps, from_times);
+    long to_times[4];
 
     to_times[0] = timestamps.substring(17, 19).toInt();
     to_times[1] = timestamps.substring(20, 22).toInt();
@@ -94,7 +96,7 @@ String cleanFormatting(String message) {
     return message;
 }
 
-void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_pos[PERIODIC_SIZE]) {
+int displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs) {
     // SRT specs
     // https://docs.fileformat.com/video/srt/
 
@@ -133,10 +135,8 @@ void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_
     // Allow user to go back and forth one message and pause
     if (diff > 0) {
         int input = 0;
-        int newlines = 0;
 
         while ((micros() - startTime) < diff) {
-            bool twice = false;
             input = checkButtons();
 
             switch (input) {
@@ -152,6 +152,12 @@ void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_
                     OLED_print(message);
                     startTime = micros();
                     break;
+                
+                case PB_B:
+                    subs.close();
+                    OLED_print(RESET_MESSAGE);
+                    resetFunc(); // call reset
+                    break;
 
                 case PB_LEFT:
                     // TODO: Pressing back on first subtitle advances it instead
@@ -159,7 +165,7 @@ void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_
                     // Go to prev subtitles
                     for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
                         if (current_times.from_time == periodic_times[i]) {
-                            Serial.println(periodic_pos[i]);
+                            // Serial.println(periodic_pos[i]);
                             subs.seek(periodic_pos[i - 1]);
                             break;
                         }
@@ -178,6 +184,13 @@ void displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_
             }
         }
     }
+
+    // Check if it's the last subtitle
+    if (subs.position() == periodic_pos[amount_of_subs - 1]) {
+        return -1;
+    }
+
+    return 0;
 }
 
 unsigned int count_lines(SdFile& subs) {
@@ -191,12 +204,16 @@ unsigned int count_lines(SdFile& subs) {
     return amount_of_lines;
 }
 
-void gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], int periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
+unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
     // Take times and pos of each segment and places them in their respective arrays
     unsigned int periodic_idx = 0;
     unsigned int current_line = 0;
+    unsigned int subs_counter = 0;
 
     while (current_line < amount_of_lines) {
+        // Keep a count of how many subs are in the file
+        ++subs_counter;
+
         // Index
         periodic_pos[periodic_idx] = subs.position();
         read_next_line(subs);
@@ -207,8 +224,8 @@ void gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], int peri
         ++current_line;
 
         // Get start timestamp as an int
-        unsigned int from_times[4];
-        unsigned int from_time = calculate_from_time(timestamps, from_times);
+        long from_times[4];
+        long from_time = calculate_from_time(timestamps, from_times);
         periodic_times[periodic_idx] = from_time;
         ++periodic_idx;
 
@@ -221,4 +238,6 @@ void gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], int peri
     }
 
     subs.seek(0);
+
+    return subs_counter;
 }

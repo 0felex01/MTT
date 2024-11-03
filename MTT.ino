@@ -1,3 +1,8 @@
+#define SD_CS 7
+#define TIME_GREETING_MESSAGE "Select your desired time"
+#define RESET_MESSAGE "You may reset now"
+#define CURSOR_SHAPE "-"
+
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <SPI.h>
@@ -6,10 +11,7 @@
 #include "PBs.h"
 #include "SD_Reader.h"
 #include "SRT.h"
-
-#define SD_CS 7
-#define TIME_GREETING_MESSAGE "Select your desired time"
-#define CURSOR_SHAPE "-"
+#include "UI.h"
 
 void setup() {
     // TODO: debugging purposes - delete for production
@@ -50,7 +52,7 @@ void setup() {
     for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
         periodic_times[i] = -1;
     }
-    int periodic_pos[PERIODIC_SIZE];
+    long periodic_pos[PERIODIC_SIZE];
     for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
         periodic_pos[i] = -1;
     }
@@ -82,7 +84,7 @@ void setup() {
                 subs.open(filename.c_str(), O_READ);
 
                 unsigned int amount_of_lines = count_lines(subs);
-                gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
+                unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
 
                 // unsigned int idx = 0;
                 // while (periodic_times[idx] != -1) {
@@ -104,59 +106,39 @@ void setup() {
                 OLED_print(cursor, 4);
                 delay(100); // To avoid double presses
 
-                while (true) {
-                    input = checkButtons();
-                    switch (input) {
-                        case PB_DOWN:
-                            if (current_timestamp[cursor_pos] != '0' && current_timestamp[cursor_pos] != ':') {
-                                current_timestamp[cursor_pos] -= 1;
-                                u8g2.clearDisplay();
-                                OLED_print(TIME_GREETING_MESSAGE);
-                                OLED_print(current_timestamp, 3);
-                            }
-                            break;
+                long chosen_time = 0;
+                chosen_time = prompt_for_time(input, current_timestamp, cursor, cursor_pos);
 
-                        case PB_UP:
-                            if (current_timestamp[cursor_pos] != '9' && current_timestamp[cursor_pos] != ':') {
-                                current_timestamp[cursor_pos] += 1;
-                                u8g2.clearDisplay();
-                                OLED_print(TIME_GREETING_MESSAGE);
-                                OLED_print(current_timestamp, 3);
-                            }
-                            break;
+                // Skip to time
+                bool skip_check = false; // If the time is 0 or longer than the last subtitle, don't bother checking
+                if (chosen_time == 0) {
+                    skip_check = true;
+                }
+                if (chosen_time > periodic_times[amount_of_subs - 1]) {
+                    Serial.println("Here");
+                    subs.seek(periodic_pos[amount_of_subs - 1]);
+                    skip_check = true;
+                }
+                Serial.println(subs.position());
 
-                        case PB_LEFT:
-                            if (cursor.length() > 1) {
-                                cursor = cursor.substring(1, cursor.length());
-                                u8g2.clearDisplay();
-                                OLED_print(TIME_GREETING_MESSAGE);
-                                OLED_print(current_timestamp, 3);
-                                OLED_print(cursor, 4);
-                                --cursor_pos;
-                            }
+                if (!skip_check) {
+                    Serial.println("Also here");
+                    for (unsigned int i = 0; i < amount_of_subs; ++i) {
+                        if (chosen_time < periodic_times[i]) {
+                            subs.seek(periodic_pos[i - 1]);
                             break;
-
-                        case PB_RIGHT:
-                            if (cursor.length() != current_timestamp.length()) {
-                                cursor = " " + cursor;
-                                u8g2.clearDisplay();
-                                OLED_print(TIME_GREETING_MESSAGE);
-                                OLED_print(current_timestamp, 3);
-                                OLED_print(cursor, 4);
-                                ++cursor_pos;
-                            }
-                            break;
-
+                        }
                     }
                 }
 
                 // Display subs
-                while (true) {
-                    displaySubs(subs, periodic_times, periodic_pos);
+                int subs_status = 0;
+                while (subs_status == 0) {
+                    subs_status = displaySubs(subs, periodic_times, periodic_pos, amount_of_subs);
                 }
 
                 subs.close();
-                OLED_print("End of subtitles file");
+                // OLED_print("End of subtitles file");
                 break;
         }
 
