@@ -86,6 +86,7 @@ void setup() {
                 unsigned int amount_of_lines = count_lines(subs);
                 unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
 
+                // TODO: Remove this debugging
                 // unsigned int idx = 0;
                 // while (periodic_times[idx] != -1) {
                 //     Serial.print(idx);
@@ -115,14 +116,11 @@ void setup() {
                     skip_check = true;
                 }
                 if (chosen_time > periodic_times[amount_of_subs - 1]) {
-                    Serial.println("Here");
                     subs.seek(periodic_pos[amount_of_subs - 1]);
                     skip_check = true;
                 }
-                Serial.println(subs.position());
 
                 if (!skip_check) {
-                    Serial.println("Also here");
                     for (unsigned int i = 0; i < amount_of_subs; ++i) {
                         if (chosen_time < periodic_times[i]) {
                             subs.seek(periodic_pos[i - 1]);
@@ -132,9 +130,10 @@ void setup() {
                 }
 
                 // Display subs
+                subtitles_state current_times;
                 int subs_status = 0;
                 while (subs_status == 0) {
-                    subs_status = displaySubs(subs, periodic_times, periodic_pos, amount_of_subs);
+                    subs_status = display_subs(subs, periodic_times, periodic_pos, amount_of_subs, current_times);
                 }
 
                 subs.close();

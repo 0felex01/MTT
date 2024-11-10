@@ -58,8 +58,10 @@ int getFiles(String files[MAX_ROWS]) {
     char buf[MAX_CHAR_PER_LINE];
     while (file.openNext(&dir, O_READ) && filesCount < 30) {
         file.getName(buf, MAX_CHAR_PER_LINE);
-        files[filesCount] = String(buf);
-        ++filesCount;
+        if (buf[0] != '.') { // Ignore hidden files
+            files[filesCount] = String(buf);
+            ++filesCount;
+        }
     }
     dir.close();
     file.close();

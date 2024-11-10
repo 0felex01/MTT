@@ -45,7 +45,7 @@ long prompt_for_time(int input, String current_timestamp, String cursor, int cur
             case PB_A:
                 long from_times[4];
                 long from_time = calculate_from_time(current_timestamp, from_times);
-                Serial.println(from_time);
+                // Serial.println(from_time);
                 return from_time;
                 break;
 

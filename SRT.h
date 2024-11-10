@@ -2,11 +2,23 @@
 #define CARRIAGE_RETURN 13
 #define PERIODIC_SIZE 2000
 
-void(* resetFunc) (void) = 0;//declare reset function at address 0
-                             //
-struct times {
-    long from_time;
-    float delay_time;
+#define LAST_SUBTITLE_RETURN -1
+#define CLOSED_FILE_RETURN -2
+
+#define GAP_MODE 1
+#define SUBTITLES_MODE 2
+
+// void(* resetFunc) (void) = 0;//declare reset function at address 0
+
+// void reset() {
+//     RSTSR0.LVD0RF = 0;
+// }
+
+struct subtitles_state {
+    long from_time = 0;
+    long to_time = 0;
+    long subtitles_duration = 0;
+    bool paused = false;
 };
 
 String read_next_line(SdFile& subs) {
@@ -46,9 +58,6 @@ void go_to_prev_line(SdFile& subs) {
 }
 
 long calculate_from_time(String timestamps, long from_times[4]) {
-    // I seperated this into another function 
-    // because I'm gathering all start times upon file load
-    // and this is used when calculating the diff when displaying subs
     from_times[0] = timestamps.substring(0, 2).toInt();
     from_times[1] = timestamps.substring(3, 5).toInt();
     from_times[2] = timestamps.substring(6, 8).toInt();
@@ -62,27 +71,37 @@ long calculate_from_time(String timestamps, long from_times[4]) {
     return from_time;
 }
 
-struct times calculateDiff(String timestamps) {
-    // Example: 00:01:11,571 --> 00:01:14,359
-    // Returns the time difference in milliseconds
-    long from_times[4];
-    long from_time = calculate_from_time(timestamps, from_times);
-    long to_times[4];
-
+long calculate_to_time(String timestamps, long to_times[4]) {
     to_times[0] = timestamps.substring(17, 19).toInt();
     to_times[1] = timestamps.substring(20, 22).toInt();
     to_times[2] = timestamps.substring(23, 25).toInt();
     to_times[3] = timestamps.substring(26, 29).toInt();
 
-    float diff = (to_times[0] - from_times[0]) * 3600000 +
+    long to_time = (to_times[0] * 3600000) +
+        (to_times[1] * 60000) +
+        (to_times[2] * 1000) +
+        (to_times[3]);
+
+    return to_time;
+}
+
+struct subtitles_state calculate_diff(String timestamps) {
+    // Example: 00:01:11,571 --> 00:01:14,359
+    // Returns the time difference in milliseconds
+    long from_times[4];
+    long from_time = calculate_from_time(timestamps, from_times);
+    long to_times[4];
+    long to_time = calculate_to_time(timestamps, to_times);
+
+    long subtitles_diff = (to_times[0] - from_times[0]) * 3600000 +
         (to_times[1] - from_times[1]) * 60000 +
         (to_times[2] - from_times[2]) * 1000 +
         (to_times[3] - from_times[3]);
 
-    return {from_time, diff};
+    return {from_time, to_time, subtitles_diff};
 }
 
-String cleanFormatting(String message) {
+String clean_formatting(String message) {
     // Strips of all HTML formatting in SRT files
 
     message.replace("<b>", "");
@@ -96,18 +115,88 @@ String cleanFormatting(String message) {
     return message;
 }
 
-int displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs) {
+int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &current_state, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long diff, long start_time, String message, String first_time) {
+    // Allow user to use pushbuttons during subtitle view
+    if (diff > 0) {
+        int input = 0;
+
+        while ((micros() - start_time) < diff) {
+            input = checkButtons();
+
+            switch (input) {
+                case PB_A:
+                    // TODO: Add PB logic during paused mode, think about the paused bool in the state struct
+                    OLED_print(first_time, MAX_ROWS - 1);
+
+                    input = PB_NOT_PRESSED;
+                    while (input != PB_A) {
+                        input = checkButtons();
+                    }
+
+                    // GAP_MODE: Advance to next real segment
+                    // SUBTITLES_MODE: Reset wait time
+                    OLED_print(message);
+                    if (mode == GAP_MODE) {
+                        start_time = diff;
+                    } else {
+                        start_time = micros();
+                    }
+                    diff = current_state.subtitles_duration * 1000; // us
+                    break;
+                
+                case PB_B:
+                    OLED_print(RESET_MESSAGE);
+                    return CLOSED_FILE_RETURN;
+                    // TODO: see if a software reset is possible on uno r4 (since it's arm, not avr)
+                    // reset();
+                    break;
+
+                case PB_LEFT:
+                    // TODO: Pressing back on second subtitle doesn't go to first
+
+                    // Go to prev subtitles
+                    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
+                        if (current_state.from_time == periodic_times[i]) {
+                            subs.seek(periodic_pos[i - 2]);
+                            break;
+                        }
+                    }
+
+                    start_time = diff; // Break out of wait
+                    delay(100); // To avoid double presses
+                    break;
+
+                case PB_RIGHT:
+                    // Jump to next SRT block
+                    // We're already at the next block because the reads are done before this
+                    start_time = diff;
+                    current_state.to_time = 0; // To avoid gap delay when advancing segment
+                    delay(100); // To avoid double presses
+                    break;
+            }
+        }
+    }
+
+    return 0;
+}
+
+int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs, subtitles_state &current_state) {
     // SRT specs
     // https://docs.fileformat.com/video/srt/
 
-    float startTime = micros();
+    unsigned long before_calc_time = micros();
 
     // Index
     read_next_line(subs);
 
     // Timestamp
     String timestamps = read_next_line(subs);
-    times current_times = calculateDiff(timestamps); // ms
+    long previous_to_time = 0;
+    // Store previous to_time for gap calculation
+    if (current_state.to_time != 0) {
+        previous_to_time = current_state.to_time;
+    }
+    current_state = calculate_diff(timestamps); // ms
 
     // Timestamp for Pause
     unsigned int first_space = timestamps.indexOf(" ");
@@ -126,70 +215,42 @@ int displaySubs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_
         currentLine = read_next_line(subs);
         message += currentLine + " ";
     } while (currentLine != "\r");
-    message = cleanFormatting(message);
+    message = clean_formatting(message);
+
+    // Quick way to add a delay between segments
+    long gap_diff = 0;
+    long start_time = 0;
+    if (previous_to_time != 0) {
+        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
+        start_time = micros();
+
+        // The main display call
+        int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
+        if (return_code != 0) {
+            return return_code;
+        }
+
+        before_calc_time = micros(); // Reset for subtitles_diff's computation time compensation
+    }
     OLED_print(message);
 
     // Account for computation time for message duration
-    float diff = (current_times.delay_time * 1000) - ((micros() - startTime)); // us
+    long subtitles_diff = 0;
+    subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
+    start_time = micros();
 
-    // Allow user to go back and forth one message and pause
-    if (diff > 0) {
-        int input = 0;
-
-        while ((micros() - startTime) < diff) {
-            input = checkButtons();
-
-            switch (input) {
-                case PB_A:
-                    OLED_print(first_time, MAX_ROWS - 1);
-
-                    input = PB_NOT_PRESSED;
-                    while (input != PB_A) {
-                        input = checkButtons();
-                    }
-
-                    // Reset wait time
-                    OLED_print(message);
-                    startTime = micros();
-                    break;
-                
-                case PB_B:
-                    subs.close();
-                    OLED_print(RESET_MESSAGE);
-                    resetFunc(); // call reset
-                    break;
-
-                case PB_LEFT:
-                    // TODO: Pressing back on first subtitle advances it instead
-
-                    // Go to prev subtitles
-                    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
-                        if (current_times.from_time == periodic_times[i]) {
-                            // Serial.println(periodic_pos[i]);
-                            subs.seek(periodic_pos[i - 1]);
-                            break;
-                        }
-                    }
-
-                    startTime = diff; // Break out of wait
-                    delay(100); // To avoid double presses
-                    break;
-
-                case PB_RIGHT:
-                    // Jump to next SRT block
-                    // We're already at the next block because the reads are done before this
-                    startTime = diff;
-                    delay(100); // To avoid double presses
-                    break;
-            }
-        }
+    // The main display call
+    int return_code = subtitle_view_pushbuttons(SUBTITLES_MODE, subs, current_state, periodic_times, periodic_pos, subtitles_diff, start_time, message, first_time);
+    if (return_code != 0) {
+        return return_code;
     }
 
     // Check if it's the last subtitle
     if (subs.position() == periodic_pos[amount_of_subs - 1]) {
-        return -1;
+        return LAST_SUBTITLE_RETURN;
     }
 
+    u8g2.clearDisplay(); // Clearing because gap between segments should be blank
     return 0;
 }
 
