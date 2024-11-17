@@ -26,49 +26,37 @@ unsigned int count_new_lines(String message) {
     return cnt;
 }
 
-void OLED_draw(String message, const uint8_t *font, unsigned int col, unsigned int row) {
-    // Serial.println(message);
-    // Serial.print(col);
-    // Serial.print(", ");
-    // Serial.println(row);
-    // Display row
-    do {
-        u8g2.setFont(font);
-        u8g2.drawUTF8(col, row, message.c_str());
-    } while (u8g2.nextPage());
-}
-
 void OLED_print(String message) {
     u8g2.clearDisplay();
 
     unsigned int total_rows = count_new_lines(message) + 1;
     unsigned int prev_newline_pos = 0;
     unsigned int cur_newline_pos = 0;
-    String truncated_message;
     // Iterate through all but last row because last row is usually not MAX_CHAR_PER_LINE
     for (unsigned int i = 0; i < (total_rows - 1); ++i) {
         // Truncate row based on newlines positions
-        cur_newline_pos = message.indexOf('\n', cur_newline_pos + 1);
+        cur_newline_pos = message.indexOf('\n', cur_newline_pos);
         if (prev_newline_pos == 0) { // First line
             truncated_message = message.substring(0, cur_newline_pos);
         } else {
-            truncated_message = message.substring(prev_newline_pos + 1, cur_newline_pos);
+            truncated_message = message.substring(prev_newline_pos, cur_newline_pos);
         }
         prev_newline_pos = cur_newline_pos;
 
-        // Display current row
-        OLED_draw(truncated_message, NORMAL_FONT, 0, (i + 1) * (HEIGHT - 1) + i);
+        // Display row
+        do {
+            u8g2.setFont(NORMAL_FONT);
+            u8g2.drawUTF8(col, (i + 1) * (HEIGHT - 1) + i, truncated_message.c_str());
+        } while (u8g2.nextPage());
     }
 
-    // First or last row
-    // Watch out for the newline characters
-    if (total_rows == 1) {
-        truncated_message = message.substring(0, message.length());
-        OLED_draw(truncated_message, NORMAL_FONT, 0, HEIGHT);
-    } else {
-        truncated_message = message.substring(cur_newline_pos + 1, message.length());
-        OLED_draw(truncated_message, NORMAL_FONT, 0, (HEIGHT * total_rows) + (total_rows - 1));
-    }
+    // Last row
+    truncated_message = message.substring(cur_newline_pos, message.length());
+    // Display row
+    do {
+        u8g2.setFont(NORMAL_FONT);
+        u8g2.drawUTF8(col, (i + 1) * (HEIGHT - 1) + i, truncated_message.c_str());
+    } while (u8g2.nextPage());
 }
 
 void OLED_print(String message, unsigned int row) {

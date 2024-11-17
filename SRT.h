@@ -8,6 +8,8 @@
 #define GAP_MODE 1
 #define SUBTITLES_MODE 2
 
+unsigned long before_calc_time = 0;
+
 // void(* resetFunc) (void) = 0;//declare reset function at address 0
 
 // void reset() {
@@ -115,6 +117,42 @@ String clean_formatting(String message) {
     return message;
 }
 
+String word_wrap(String message) {
+    String before_msg;
+    String after_msg;
+    // Sliding window of the message inserting newline characters at or before MAX_CHAR_PER_LINE
+    Serial.println("Here");
+    if (message.length() > MAX_CHAR_PER_LINE) {
+        unsigned int from_pos = 0;
+        unsigned int to_pos = MAX_CHAR_PER_LINE - 1;
+        unsigned int len = message.length();
+        while (from_pos < len) {
+            // TODO: Fix this
+            // Find an earlier space if it doesn't end on a nice character
+            if (to_pos < message.length()) {
+                if (message[to_pos] != ' ' && message[to_pos] != '.' && message[to_pos] != ',' &&
+                        message[to_pos] != '!' && message[to_pos] != '?') {
+                    to_pos = message.substring(from_pos, to_pos + 1).lastIndexOf(' ');
+                }
+            } else {
+                to_pos = message.length() - 1;
+            }
+
+            // Insert the newline
+            before_msg = message.substring(0, to_pos);
+            after_msg = message.substring(to_pos + 1);
+            message = String(before_msg + '\n' + after_msg);
+
+            from_pos = to_pos + 2;
+            to_pos += MAX_CHAR_PER_LINE + 2;
+            len = message.length();
+        }
+    }
+
+    Serial.println(message);
+    return message;
+}
+
 int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &current_state, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long diff, long start_time, String message, String first_time) {
     // Allow user to use pushbuttons during subtitle view
     if (diff > 0) {
@@ -143,7 +181,7 @@ int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &
                     }
                     diff = current_state.subtitles_duration * 1000; // us
                     break;
-                
+
                 case PB_B:
                     OLED_print(RESET_MESSAGE);
                     return CLOSED_FILE_RETURN;
@@ -184,7 +222,11 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
     // SRT specs
     // https://docs.fileformat.com/video/srt/
 
-    unsigned long before_calc_time = micros();
+    // First segment will record the time to use to account for calculations here
+    // Otherwise, it's done at the end of each segment
+    if (before_calc_time == 0) {
+        before_calc_time = micros();
+    }
 
     // Index
     read_next_line(subs);
@@ -209,6 +251,7 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
 
     // Message
     // Putting all of the lines of the message into one string
+    // Also does word wrapping
     String message;
     String currentLine;
     do {
@@ -216,15 +259,15 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
         message += currentLine + " ";
     } while (currentLine != "\r");
     message = clean_formatting(message);
+    message = word_wrap(message);
 
-    // Quick way to add a delay between segments
+    // Delay between segments
     long gap_diff = 0;
     long start_time = 0;
     if (previous_to_time != 0) {
-        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
         start_time = micros();
+        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
 
-        // The main display call
         int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
         if (return_code != 0) {
             return return_code;
@@ -236,21 +279,24 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
 
     // Account for computation time for message duration
     long subtitles_diff = 0;
-    subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
     start_time = micros();
+    subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
 
-    // The main display call
     int return_code = subtitle_view_pushbuttons(SUBTITLES_MODE, subs, current_state, periodic_times, periodic_pos, subtitles_diff, start_time, message, first_time);
     if (return_code != 0) {
         return return_code;
     }
+
+    // Was forgetting to account for the computation time to clear display
+    before_calc_time = micros();
+
+    u8g2.clearDisplay(); // Clearing because gap between segments should be blank
 
     // Check if it's the last subtitle
     if (subs.position() == periodic_pos[amount_of_subs - 1]) {
         return LAST_SUBTITLE_RETURN;
     }
 
-    u8g2.clearDisplay(); // Clearing because gap between segments should be blank
     return 0;
 }
 
