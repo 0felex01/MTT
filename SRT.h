@@ -131,6 +131,9 @@ String word_wrap(String message) {
         } while (cur_pos <= message.length());
     }
 
+    // Simple wrap of consecutive dash lines
+    message.replace(String(" -"), String("\n-"));
+
     return message;
 }
 
@@ -139,7 +142,7 @@ int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &
     if (diff > 0) {
         int input = 0;
 
-        while ((micros() - start_time) < diff) {
+        while ((micros() - (unsigned long)start_time) < (unsigned long)diff) {
             input = checkButtons();
 
             switch (input) {
@@ -274,7 +277,7 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
     u8g2.clearDisplay(); // Clearing because gap between segments should be blank
 
     // Check if it's the last subtitle
-    if (subs.position() == periodic_pos[amount_of_subs - 1]) {
+    if ((long)subs.position() == periodic_pos[amount_of_subs - 1]) {
         return LAST_SUBTITLE_RETURN;
     }
 
