@@ -118,38 +118,19 @@ String clean_formatting(String message) {
 }
 
 String word_wrap(String message) {
-    String before_msg;
-    String after_msg;
     // Sliding window of the message inserting newline characters at or before MAX_CHAR_PER_LINE
-    Serial.println("Here");
+    unsigned int cur_pos = 0;
     if (message.length() > MAX_CHAR_PER_LINE) {
-        unsigned int from_pos = 0;
-        unsigned int to_pos = MAX_CHAR_PER_LINE - 1;
-        unsigned int len = message.length();
-        while (from_pos < len) {
-            // TODO: Fix this
-            // Find an earlier space if it doesn't end on a nice character
-            if (to_pos < message.length()) {
-                if (message[to_pos] != ' ' && message[to_pos] != '.' && message[to_pos] != ',' &&
-                        message[to_pos] != '!' && message[to_pos] != '?') {
-                    to_pos = message.substring(from_pos, to_pos + 1).lastIndexOf(' ');
-                }
-            } else {
-                to_pos = message.length() - 1;
+        do {
+            if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') {
+                // Serial.println(message.substring(cur_pos, cur_pos + MAX_CHAR_PER_LINE));
+                cur_pos = message.substring(0, cur_pos).lastIndexOf(' ');
             }
-
-            // Insert the newline
-            before_msg = message.substring(0, to_pos);
-            after_msg = message.substring(to_pos + 1);
-            message = String(before_msg + '\n' + after_msg);
-
-            from_pos = to_pos + 2;
-            to_pos += MAX_CHAR_PER_LINE + 2;
-            len = message.length();
-        }
+            message[cur_pos] = '\n';
+            cur_pos += MAX_CHAR_PER_LINE;
+        } while (cur_pos <= message.length());
     }
 
-    Serial.println(message);
     return message;
 }
 

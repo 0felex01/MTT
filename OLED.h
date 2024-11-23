@@ -57,7 +57,7 @@ void OLED_print(String message) {
         prev_newline_pos = cur_newline_pos;
 
         // Display current row
-        OLED_draw(truncated_message, NORMAL_FONT, 0, (i + 1) * (HEIGHT - 1) + i);
+        OLED_draw(truncated_message, NORMAL_FONT, 0, (i + 1) * HEIGHT + i);
     }
 
     // First or last row
@@ -67,7 +67,7 @@ void OLED_print(String message) {
         OLED_draw(truncated_message, NORMAL_FONT, 0, HEIGHT);
     } else {
         truncated_message = message.substring(cur_newline_pos + 1, message.length());
-        OLED_draw(truncated_message, NORMAL_FONT, 0, (HEIGHT * total_rows) + (total_rows - 1));
+        OLED_draw(truncated_message, NORMAL_FONT, 0, total_rows * HEIGHT + (total_rows - 1));
     }
 }
 
