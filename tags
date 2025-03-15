@@ -1,0 +1,58 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	Development	//
+CARRIAGE_RETURN	SRT.h	2;"	d
+CLOSED_FILE_RETURN	SRT.h	6;"	d
+GAP_DIFF_OFFSET	SRT.h	10;"	d
+GAP_MODE	SRT.h	8;"	d
+HEIGHT	OLED.h	8;"	d
+LAST_SUBTITLE_RETURN	SRT.h	5;"	d
+LINE_FEED	SRT.h	1;"	d
+MAX_CHAR_PER_LINE	OLED.h	7;"	d
+MAX_FILES	SD_Reader.h	1;"	d
+MAX_ROWS	SD_Reader.h	2;"	d
+NORMAL_FONT	OLED.h	9;"	d
+OLED_CLK	OLED.h	5;"	d
+OLED_CS	OLED.h	3;"	d
+OLED_DATA	OLED.h	4;"	d
+OLED_DC	OLED.h	2;"	d
+OLED_RST	OLED.h	1;"	d
+OLED_draw	OLED.h	/^void OLED_draw(String message, const uint8_t *font, unsigned int col, unsigned int row) {$/;"	f
+OLED_print	OLED.h	/^void OLED_print(String message) {$/;"	f
+OLED_print	OLED.h	/^void OLED_print(String message, unsigned int row) {$/;"	f
+PB_A	PBs.h	6;"	d
+PB_B	PBs.h	5;"	d
+PB_DOWN	PBs.h	2;"	d
+PB_LEFT	PBs.h	1;"	d
+PB_NOT_PRESSED	PBs.h	7;"	d
+PB_RIGHT	PBs.h	4;"	d
+PB_UP	PBs.h	3;"	d
+PERIODIC_SIZE	SRT.h	3;"	d
+SUBTITLES_MODE	SRT.h	9;"	d
+before_calc_time	SRT.h	/^unsigned long before_calc_time = 0;$/;"	v
+bubbleSort	SD_Reader.h	/^void bubbleSort(String files[MAX_FILES], int filesCount) {$/;"	f
+calculate_diff	SRT.h	/^struct subtitles_state calculate_diff(String timestamps) {$/;"	f
+calculate_from_time	SRT.h	/^long calculate_from_time(String timestamps, long from_times[4]) {$/;"	f
+calculate_to_time	SRT.h	/^long calculate_to_time(String timestamps, long to_times[4]) {$/;"	f
+checkButtons	PBs.h	/^int checkButtons() {$/;"	f
+clean_formatting	SRT.h	/^String clean_formatting(String message) {$/;"	f
+count_lines	SRT.h	/^unsigned int count_lines(SdFile& subs) {$/;"	f
+count_new_lines	OLED.h	/^unsigned int count_new_lines(String message) {$/;"	f
+display_subs	SRT.h	/^int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs, subtitles_state &current_state) {$/;"	f
+from_time	SRT.h	/^    long from_time = 0;$/;"	m	struct:subtitles_state
+gatherTimestamps	SRT.h	/^unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {$/;"	f
+getFiles	SD_Reader.h	/^int getFiles(String files[MAX_ROWS]) {$/;"	f
+go_to_prev_line	SRT.h	/^void go_to_prev_line(SdFile& subs) {$/;"	f
+paused	SRT.h	/^    bool paused = false;$/;"	m	struct:subtitles_state
+prompt_for_time	UI.h	/^long prompt_for_time(int input, String current_timestamp, String cursor, int cursor_pos) {$/;"	f
+read_next_line	SRT.h	/^String read_next_line(SdFile& subs) {$/;"	f
+redrawFiles	SD_Reader.h	/^void redrawFiles(String files[MAX_FILES], int filesCount) {$/;"	f
+subtitle_view_pushbuttons	SRT.h	/^int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &current_state, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long diff, long start_time, String message, String first_time) {$/;"	f
+subtitles_duration	SRT.h	/^    long subtitles_duration = 0;$/;"	m	struct:subtitles_state
+subtitles_state	SRT.h	/^struct subtitles_state {$/;"	s
+to_time	SRT.h	/^    long to_time = 0;$/;"	m	struct:subtitles_state
+u8g2_begin	OLED.h	/^void u8g2_begin() {$/;"	f
+word_wrap	SRT.h	/^String word_wrap(String message) {$/;"	f

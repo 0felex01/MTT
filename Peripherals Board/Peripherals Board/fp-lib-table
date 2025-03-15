@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Gerber")(type "KiCad")(uri "/home/iwakura/Downloads/ABX00087-cad-files/UNO R4 WiFi/Manufacturing files/Gerber.pretty")(options "")(descr ""))
+)

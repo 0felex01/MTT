@@ -7,6 +7,7 @@
 
 #define GAP_MODE 1
 #define SUBTITLES_MODE 2
+#define GAP_DIFF_OFFSET 2000
 
 unsigned long before_calc_time = 0;
 
@@ -250,7 +251,7 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
     long start_time = 0;
     if (previous_to_time != 0) {
         start_time = micros();
-        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time); // Accounting for computation time, us
+        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time) + GAP_DIFF_OFFSET; // Accounting for computation time, us
 
         int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
         if (return_code != 0) {
