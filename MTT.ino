@@ -14,138 +14,140 @@
 #include "UI.h"
 
 void setup() {
-    // TODO: debugging purposes - delete for production
-    Serial.begin(921600);
-    while (!Serial);
+  // TODO: debugging purposes - delete for production
+  Serial.begin(921600);
+  while (!Serial)
+    ;
 
-    // Init PBs
-    pinMode(PB_LEFT, INPUT_PULLUP);
-    pinMode(PB_DOWN, INPUT_PULLUP);
-    pinMode(PB_UP, INPUT_PULLUP);
-    pinMode(PB_RIGHT, INPUT_PULLUP);
-    pinMode(PB_B, INPUT_PULLUP);
-    pinMode(PB_A, INPUT_PULLUP);
+  // Init PBs
+  pinMode(PB_LEFT, INPUT_PULLUP);
+  pinMode(PB_DOWN, INPUT_PULLUP);
+  pinMode(PB_UP, INPUT_PULLUP);
+  pinMode(PB_RIGHT, INPUT_PULLUP);
+  pinMode(PB_B, INPUT_PULLUP);
+  pinMode(PB_A, INPUT_PULLUP);
 
-    // Init OLED
-    u8g2_begin();
-    u8g2.clearDisplay();
+  // Init OLED
+  u8g2_begin();
+  u8g2.clearDisplay();
 
-    // Init SD
-    SdFat sd;
-    OLED_print("Waiting for SD");
-    while (!sd.begin(SD_CS, SPI_DIV3_SPEED));
-    u8g2.clearDisplay();
+  // Init SD
+  SdFat sd;
+  OLED_print("Waiting for SD");
+  while (!sd.begin(SD_CS, SPI_DIV3_SPEED))
+    ;
+  u8g2.clearDisplay();
 
-    // Read Files
-    String files[MAX_FILES];
-    int filesCount = getFiles(files);
-    files[0] = ">" + files[0]; // Cursor on first file
-    redrawFiles(files, filesCount);
+  // Read Files
+  String files[MAX_FILES];
+  int filesCount = getFiles(files);
+  files[0] = ">" + files[0];  // Cursor on first file
+  redrawFiles(files, filesCount);
 
-    // File Select
-    int input = 0;
-    int cursor_pos = 0;
-    bool needRedraw = false;
+  // File Select
+  int input = 0;
+  int cursor_pos = 0;
+  bool needRedraw = false;
 
-    // Timestamps
-    long periodic_times[PERIODIC_SIZE];
-    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
-        periodic_times[i] = -1;
-    }
-    long periodic_pos[PERIODIC_SIZE];
-    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
-        periodic_pos[i] = -1;
-    }
+  // Timestamps
+  long periodic_times[PERIODIC_SIZE];
+  for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
+    periodic_times[i] = -1;
+  }
+  long periodic_pos[PERIODIC_SIZE];
+  for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
+    periodic_pos[i] = -1;
+  }
 
-    while (true) {
-        input = checkButtons();
-        switch (input) {
-            case PB_DOWN:
-                if (cursor_pos < MAX_ROWS && cursor_pos < (filesCount - 1)) {
-                    files[cursor_pos] = files[cursor_pos].substring(1);
-                    ++cursor_pos;
-                    files[cursor_pos] = ">" + files[cursor_pos];
-                    needRedraw = true;
-                }
-                break;
+  while (true) {
+    input = checkButtons();
+    switch (input) {
+      case PB_DOWN:
+        if (cursor_pos < MAX_ROWS && cursor_pos < (filesCount - 1)) {
+          files[cursor_pos] = files[cursor_pos].substring(1);
+          ++cursor_pos;
+          files[cursor_pos] = ">" + files[cursor_pos];
+          needRedraw = true;
+        }
+        break;
 
-            case PB_UP:
-                if (cursor_pos > 0) {
-                    files[cursor_pos] = files[cursor_pos].substring(1);
-                    --cursor_pos;
-                    files[cursor_pos] = ">" + files[cursor_pos];
-                    needRedraw = true;
-                }
-                break;
+      case PB_UP:
+        if (cursor_pos > 0) {
+          files[cursor_pos] = files[cursor_pos].substring(1);
+          --cursor_pos;
+          files[cursor_pos] = ">" + files[cursor_pos];
+          needRedraw = true;
+        }
+        break;
 
-            case PB_A:
-                SdFile subs;
-                String filename = files[cursor_pos].substring(1) + ".srt";
-                subs.open(filename.c_str(), O_READ);
+      case PB_A:
+        SdFile subs;
+        String filename = files[cursor_pos].substring(1) + ".srt";
+        subs.open(filename.c_str(), O_READ);
 
-                unsigned int amount_of_lines = count_lines(subs);
-                unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
+        unsigned int amount_of_lines = count_lines(subs);
+        unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
 
-                // TODO: Remove this debugging
-                // unsigned int idx = 0;
-                // while (periodic_times[idx] != -1) {
-                //     Serial.print(idx);
-                //     Serial.print(": time, ");
-                //     Serial.print(periodic_times[idx]);
-                //     Serial.print(": pos, ");
-                //     Serial.println(periodic_pos[idx]);
-                //     ++idx;
-                // }
+        // TODO: Remove this debugging
+        // unsigned int idx = 0;
+        // while (periodic_times[idx] != -1) {
+        //     Serial.print(idx);
+        //     Serial.print(": time, ");
+        //     Serial.print(periodic_times[idx]);
+        //     Serial.print(": pos, ");
+        //     Serial.println(periodic_pos[idx]);
+        //     ++idx;
+        // }
 
-                // Prompt user to select time
-                String current_timestamp = "00:00:00:00";
-                String cursor = CURSOR_SHAPE;
-                cursor_pos = 0;
+        // Prompt user to select time
+        String current_timestamp = "00:00:00:00";
+        String cursor = CURSOR_SHAPE;
+        cursor_pos = 0;
 
-                OLED_print(TIME_GREETING_MESSAGE);
-                OLED_print(current_timestamp, 3);
-                OLED_print(cursor, 4);
-                delay(100); // To avoid double presses
+        OLED_print(TIME_GREETING_MESSAGE);
+        OLED_print(current_timestamp, 3);
+        OLED_print(cursor, 4);
+        delay(100);  // To avoid double presses
 
-                long chosen_time = 0;
-                chosen_time = prompt_for_time(input, current_timestamp, cursor, cursor_pos);
+        long chosen_time = 0;
+        chosen_time = prompt_for_time(input, current_timestamp, cursor, cursor_pos);
 
-                // Skip to time
-                bool skip_check = false; // If the time is 0 or longer than the last subtitle, don't bother checking
-                if (chosen_time == 0) {
-                    skip_check = true;
-                }
-                if (chosen_time > periodic_times[amount_of_subs - 1]) {
-                    subs.seek(periodic_pos[amount_of_subs - 1]);
-                    skip_check = true;
-                }
-
-                if (!skip_check) {
-                    for (unsigned int i = 0; i < amount_of_subs; ++i) {
-                        if (chosen_time < periodic_times[i]) {
-                            subs.seek(periodic_pos[i - 1]);
-                            break;
-                        }
-                    }
-                }
-
-                // Display subs
-                subtitles_state current_times;
-                int subs_status = 0;
-                while (subs_status == 0) {
-                    subs_status = display_subs(subs, periodic_times, periodic_pos, amount_of_subs, current_times);
-                }
-
-                subs.close();
-                // OLED_print("End of subtitles file");
-                break;
+        // Skip to time
+        bool skip_check = false;  // If the time is 0 or longer than the last subtitle, don't bother checking
+        if (chosen_time == 0) {
+          skip_check = true;
+        }
+        if (chosen_time > periodic_times[amount_of_subs - 1]) {
+          subs.seek(periodic_pos[amount_of_subs - 1]);
+          skip_check = true;
         }
 
-        if (needRedraw) {
-            redrawFiles(files, filesCount);
-            needRedraw = false;
+        if (!skip_check) {
+          for (unsigned int i = 0; i < amount_of_subs; ++i) {
+            if (chosen_time < periodic_times[i]) {
+              subs.seek(periodic_pos[i - 1]);
+              break;
+            }
+          }
         }
+
+        // Display subs
+        subtitles_state current_times;
+        int subs_status = 0;
+        while (subs_status == 0) {
+          subs_status = display_subs(subs, periodic_times, periodic_pos, amount_of_subs, current_times);
+        }
+
+        subs.close();
+        // OLED_print("End of subtitles file");
+        break;
     }
+
+    if (needRedraw) {
+      redrawFiles(files, filesCount);
+      needRedraw = false;
+    }
+  }
 }
 
 void loop() {

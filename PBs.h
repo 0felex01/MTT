@@ -1,9 +1,9 @@
-#define PB_LEFT 0
-#define PB_DOWN 1
-#define PB_UP 2
-#define PB_RIGHT 3
-#define PB_B 4
-#define PB_A 5
+#define PB_LEFT 5
+#define PB_DOWN 4
+#define PB_UP 3
+#define PB_RIGHT 2
+#define PB_B 1
+#define PB_A 0
 #define PB_NOT_PRESSED -1
 
 int checkButtons() {

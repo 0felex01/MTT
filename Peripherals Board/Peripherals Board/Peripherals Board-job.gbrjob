@@ -5,7 +5,7 @@
       "Application": "Pcbnew",
       "Version": "7.0.11+dfsg-1build4"
     },
-    "CreationDate": "2025-03-15T16:42:38-04:00"
+    "CreationDate": "2025-03-22T15:14:39-04:00"
   },
   "GeneralSpecs": {
     "ProjectId": {
@@ -14,8 +14,8 @@
       "Revision": "rev?"
     },
     "Size": {
-      "X": 0.0,
-      "Y": 0.0
+      "X": 86.664,
+      "Y": 62.534
     },
     "LayerNumber": 2,
     "BoardThickness": 1.6,
