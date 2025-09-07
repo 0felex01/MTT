@@ -1,4 +1,4 @@
-# MTT
+# MTT (Movie-to-Text)
 Offline SRT Reader for Arduino Uno R4 WiFi
 
 # Implemented
