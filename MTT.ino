@@ -41,7 +41,6 @@ void setup() {
   // Read Files
   String files[MAX_FILES];
   int filesCount = getFiles(files);
-  // Serial.println(files[0]);
   files[0] = ">" + files[0];  // Cursor on first file
   redrawFiles(files, filesCount);
 
@@ -63,7 +62,6 @@ void setup() {
   // Main Loop
   while (true) {
     input = checkButtons();
-    Serial.println(input);
     switch (input) {
       case PB_DOWN:
         if (cursor_pos < MAX_ROWS && cursor_pos < (filesCount - 1)) {
@@ -84,7 +82,6 @@ void setup() {
         break;
 
       case PB_A:
-        Serial.println("Here");
         SdFile subs;
         String filename = files[cursor_pos].substring(1) + ".srt";
         subs.open(filename.c_str(), O_READ);

@@ -17,3 +17,7 @@ Offline SRT Reader for Arduino Uno R4 WiFi
 - Add proper reset function for Uno R4 WiFi.
 - Possible support for italics and other formatting?
 - Possible unicode font support for Japanese?
+
+# TODO for next time
+- Make delay smaller
+- Fix rewind subtitles
