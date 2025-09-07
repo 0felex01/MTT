@@ -9,6 +9,7 @@ Offline SRT Reader for Arduino Uno R4 WiFi
 - Word wrapping
 
 # Things I could do
+- Fix the bottom right PCB hole of the RIGHT PB touching the ground trace.
 - Design simple PCB to replace protoboard mess, needed before 3D printing a case.
 - Fix the crash if the SRT file doesn't end with a new line.
 - Fix the word wrapping of consecutive dash lines.
