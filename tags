@@ -4,13 +4,12 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	Development	//
-CARRIAGE_RETURN	SRT.h	2;"	d
-CLOSED_FILE_RETURN	SRT.h	6;"	d
-GAP_DIFF_OFFSET	SRT.h	10;"	d
-GAP_MODE	SRT.h	8;"	d
+CARRIAGE_RETURN	SRT.h	4;"	d
+CLOSED_FILE_RETURN	SRT.h	8;"	d
+GAP_MODE	SRT.h	10;"	d
 HEIGHT	OLED.h	8;"	d
-LAST_SUBTITLE_RETURN	SRT.h	5;"	d
-LINE_FEED	SRT.h	1;"	d
+LAST_SUBTITLE_RETURN	SRT.h	7;"	d
+LINE_FEED	SRT.h	3;"	d
 MAX_CHAR_PER_LINE	OLED.h	7;"	d
 MAX_FILES	SD_Reader.h	1;"	d
 MAX_ROWS	SD_Reader.h	2;"	d
@@ -30,9 +29,9 @@ PB_LEFT	PBs.h	1;"	d
 PB_NOT_PRESSED	PBs.h	7;"	d
 PB_RIGHT	PBs.h	4;"	d
 PB_UP	PBs.h	3;"	d
-PERIODIC_SIZE	SRT.h	3;"	d
-SUBTITLES_MODE	SRT.h	9;"	d
-before_calc_time	SRT.h	/^unsigned long before_calc_time = 0;$/;"	v
+PERIODIC_SIZE	SRT.h	5;"	d
+SUBTITLES_MODE	SRT.h	11;"	d
+before_calc_time	SRT.h	/^unsigned long before_calc_time = 0; \/\/ us$/;"	v
 bubbleSort	SD_Reader.h	/^void bubbleSort(String files[MAX_FILES], int filesCount) {$/;"	f
 calculate_diff	SRT.h	/^struct subtitles_state calculate_diff(String timestamps) {$/;"	f
 calculate_from_time	SRT.h	/^long calculate_from_time(String timestamps, long from_times[4]) {$/;"	f
