@@ -16,8 +16,7 @@
 void setup() {
   // TODO: debugging purposes - delete for production
   Serial.begin(921600);
-  while (!Serial)
-    ;
+  while (!Serial);
 
   // Init PBs
   pinMode(PB_LEFT, INPUT_PULLUP);
@@ -27,20 +26,23 @@ void setup() {
   pinMode(PB_B, INPUT_PULLUP);
   pinMode(PB_A, INPUT_PULLUP);
 
-  // Init OLED
+  // // Init OLED
   u8g2_begin();
   u8g2.clearDisplay();
 
   // Init SD
   SdFat sd;
   OLED_print("Waiting for SD");
-  while (!sd.begin(SD_CS, SPI_DIV3_SPEED))
-    ;
-  u8g2.clearDisplay();
+  Serial.println("Waiting for SD");
+  while (!sd.begin(SD_CS, SPI_EIGHTH_SPEED));
+  // while (!sd.begin(SD_CS, SPI_DIV3_SPEED));
+  // u8g2.clearDisplay();
+  Serial.println("Found");
 
   // Read Files
   String files[MAX_FILES];
   int filesCount = getFiles(files);
+  Serial.println(filesCount);
   files[0] = ">" + files[0];  // Cursor on first file
   redrawFiles(files, filesCount);
 
@@ -82,9 +84,12 @@ void setup() {
         break;
 
       case PB_A:
-        SdFile subs;
         String filename = files[cursor_pos].substring(1) + ".srt";
+
+        SdFile subs;
         subs.open(filename.c_str(), O_READ);
+
+        // subs = sd.open(filename.c_str(), O_READ);
 
         unsigned int amount_of_lines = count_lines(subs);
         unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
@@ -119,14 +124,14 @@ void setup() {
           skip_check = true;
         }
         if (chosen_time > periodic_times[amount_of_subs - 1]) {
-          subs.seek(periodic_pos[amount_of_subs - 1]);
+          subs.seekSet(periodic_pos[amount_of_subs - 1]);
           skip_check = true;
         }
 
         if (!skip_check) {
           for (unsigned int i = 0; i < amount_of_subs; ++i) {
             if (chosen_time < periodic_times[i]) {
-              subs.seek(periodic_pos[i - 1]);
+              subs.seekSet(periodic_pos[i - 1]);
               break;
             }
           }

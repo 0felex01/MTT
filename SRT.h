@@ -37,7 +37,7 @@ void go_to_prev_line(SdFile& subs) {
     unsigned int linefeed_count = 0;
 
     while (true) {
-        if (subs.position() <= 2) {
+        if (subs.curPosition() <= 2) {
             return;
         }
 
@@ -49,7 +49,7 @@ void go_to_prev_line(SdFile& subs) {
             }
         }
 
-        subs.seek(subs.position() - 2);
+        subs.seekSet(subs.curPosition() - 2);
     }
 }
 
@@ -159,9 +159,9 @@ int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &
                     for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
                         if (current_state.from_time == periodic_times[i]) {
                             if (i > 0) {
-                                subs.seek(periodic_pos[i - 1]);
+                                subs.seekSet(periodic_pos[i - 1]);
                             } else {
-                                subs.seek(0);
+                                subs.seekSet(0);
                             }
                             break;
                         }
@@ -241,7 +241,7 @@ int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic
     before_calc_time = micros();
     u8g2.clearDisplay();
 
-    if ((long)subs.position() == periodic_pos[amount_of_subs - 1]) {
+    if ((long)subs.curPosition() == periodic_pos[amount_of_subs - 1]) {
         return LAST_SUBTITLE_RETURN;
     }
 
@@ -255,7 +255,7 @@ unsigned int count_lines(SdFile& subs) {
         ++amount_of_lines;
     }
 
-    subs.seek(0);
+    subs.seekSet(0);
     return amount_of_lines;
 }
 
@@ -267,7 +267,7 @@ unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], 
     while (current_line < amount_of_lines) {
         ++subs_counter;
 
-        periodic_pos[periodic_idx] = subs.position();
+        periodic_pos[periodic_idx] = subs.curPosition();
         read_next_line(subs);
         ++current_line;
 
@@ -286,7 +286,7 @@ unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], 
         } while (currentLine.length() > 1);
     }
 
-    subs.seek(0);
+    subs.seekSet(0);
     return subs_counter;
 }
 

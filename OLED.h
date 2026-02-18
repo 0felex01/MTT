@@ -1,14 +1,19 @@
+// OLED SPI
+// #define OLED_DC 9
+// #define OLED_CS 10
+
+// OLED I2C
 #define OLED_RST 8
-#define OLED_DC 9
-#define OLED_CS 10
-#define OLED_DATA 11
-#define OLED_CLK 13
+#define OLED_SCK 13
+#define OLED_SDA 11
 
 #define MAX_CHAR_PER_LINE 25
 #define HEIGHT 7 // 8 pixels tall, starts from 0
 #define NORMAL_FONT u8g2_font_5x7_tf
 
-U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST); // SW conflicts with SD SPI
+// U8G2_SSD1309_128X64_NONAME2_F_4W_HW_SPI u8g2(U8G2_R0, OLED_CS, OLED_DC, OLED_RST); // SW conflicts with SD SPI
+// U8G2_SSD1309_128X64_NONAME2_F_SW_I2C u8g2(U8G2_R0, OLED_RST, OLED_SCK, OLED_SDA);
+U8G2_SSD1309_128X64_NONAME2_F_SW_I2C u8g2(U8G2_R0, OLED_SCK, OLED_SDA, OLED_RST);
 
 void u8g2_begin() {
     u8g2.begin();
