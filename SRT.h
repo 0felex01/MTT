@@ -133,7 +133,7 @@ int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &
 
             switch (input) {
                 case PB_A:
-                    OLED_print(first_time, MAX_ROWS - 1);
+                    OLED_printLine(first_time, MAX_ROWS - 1);
 
                     input = PB_NOT_PRESSED;
                     while (input != PB_A) {

@@ -27,11 +27,8 @@ void setup() {
   pinMode(PB_A, INPUT_PULLUP);
 
   // // Init OLED
-  u8g2_begin();
+  OLED_begin();
   u8g2.clearDisplay();
-
-  OLED_print("ABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\n");
-  while(true);
 
   // Init SD
   SdFat sd;
@@ -114,8 +111,8 @@ void setup() {
         cursor_pos = 0;
 
         OLED_print(TIME_GREETING_MESSAGE);
-        OLED_print(current_timestamp, 3);
-        OLED_print(cursor, 4);
+        OLED_printLine(current_timestamp, 3);
+        OLED_printLine(cursor, 4);
         delay(100);  // To avoid double presses
 
         long chosen_time = 0;

@@ -7,7 +7,7 @@ long prompt_for_time(int input, String current_timestamp, String cursor, int cur
                     current_timestamp[cursor_pos] -= 1;
                     u8g2.clearDisplay();
                     OLED_print(TIME_GREETING_MESSAGE);
-                    OLED_print(current_timestamp, 3);
+                    OLED_printLine(current_timestamp, 3);
                 }
                 break;
 
@@ -16,7 +16,7 @@ long prompt_for_time(int input, String current_timestamp, String cursor, int cur
                     current_timestamp[cursor_pos] += 1;
                     u8g2.clearDisplay();
                     OLED_print(TIME_GREETING_MESSAGE);
-                    OLED_print(current_timestamp, 3);
+                    OLED_printLine(current_timestamp, 3);
                 }
                 break;
 
@@ -25,8 +25,8 @@ long prompt_for_time(int input, String current_timestamp, String cursor, int cur
                     cursor = cursor.substring(1, cursor.length());
                     u8g2.clearDisplay();
                     OLED_print(TIME_GREETING_MESSAGE);
-                    OLED_print(current_timestamp, 3);
-                    OLED_print(cursor, 4);
+                    OLED_printLine(current_timestamp, 3);
+                    OLED_printLine(cursor, 4);
                     --cursor_pos;
                 }
                 break;
@@ -36,8 +36,8 @@ long prompt_for_time(int input, String current_timestamp, String cursor, int cur
                     cursor = " " + cursor;
                     u8g2.clearDisplay();
                     OLED_print(TIME_GREETING_MESSAGE);
-                    OLED_print(current_timestamp, 3);
-                    OLED_print(cursor, 4);
+                    OLED_printLine(current_timestamp, 3);
+                    OLED_printLine(cursor, 4);
                     ++cursor_pos;
                 }
                 break;

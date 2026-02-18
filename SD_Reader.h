@@ -2,9 +2,9 @@
 #define MAX_ROWS 9
 
 void redrawFiles(String files[MAX_FILES], int filesCount) {
-    u8g2.clearDisplay();
+    u8g2.clearBuffer();
     for (int i = 0; i < filesCount; ++i) {
-        OLED_print(files[i], i);
+        OLED_printLine(files[i], i);
     }
 }
 
