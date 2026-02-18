@@ -30,6 +30,9 @@ void setup() {
   u8g2_begin();
   u8g2.clearDisplay();
 
+  OLED_print("ABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\nABCDEFGHIJKLMNOPQRSTUVWXY\n");
+  while(true);
+
   // Init SD
   SdFat sd;
   OLED_print("Waiting for SD");
