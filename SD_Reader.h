@@ -58,7 +58,7 @@ int getFiles(String files[MAX_ROWS]) {
     char buf[MAX_CHAR_PER_LINE];
     while (file.openNext(&dir, O_READ) && filesCount < 30) {
         file.getName(buf, MAX_CHAR_PER_LINE);
-        if (buf[0] != '.' and buf[0] != NULL) { // Ignore hidden files
+        if (buf[0] != '.' && buf[0] != '\0') { // Ignore hidden files
             Serial.println(buf);
             files[filesCount] = String(buf);
             ++filesCount;

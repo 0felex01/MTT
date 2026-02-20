@@ -13,280 +13,283 @@
 unsigned long before_calc_time = 0; // us
 
 struct subtitles_state {
-    long from_time = 0;
-    long to_time = 0;
-    long subtitles_duration = 0;
-    bool paused = false;
+  long from_time = 0;
+  long to_time = 0;
+  long subtitles_duration = 0;
+  bool paused = false;
 };
 
 String read_next_line(SdFile& subs) {
-    int data = 0;
-    String buf;
+  int data = 0;
+  String buf;
 
-    do {
-        data = subs.read();
-        buf += char(data);
-    } while (data >= 0 && (data != LINE_FEED && data != CARRIAGE_RETURN));
-    subs.read(); // Advance to next line
+  do {
+    data = subs.read();
+    buf += char(data);
+  } while (data >= 0 && (data != LINE_FEED && data != CARRIAGE_RETURN));
+  subs.read(); // Advance to next line
 
-    return buf;
+  return buf;
 }
 
 void go_to_prev_line(SdFile& subs) {
-    int data = 0;
-    unsigned int linefeed_count = 0;
+  int data = 0;
+  unsigned int linefeed_count = 0;
 
-    while (true) {
-        if (subs.curPosition() <= 2) {
-            return;
-        }
-
-        data = subs.read();
-        if (data == LINE_FEED) {
-            ++linefeed_count;
-            if (linefeed_count == 6) {
-                return;
-            }
-        }
-
-        subs.seekSet(subs.curPosition() - 2);
+  while (true) {
+    if (subs.curPosition() <= 2) {
+      return;
     }
+
+    data = subs.read();
+    if (data == LINE_FEED) {
+      ++linefeed_count;
+      if (linefeed_count == 6) {
+        return;
+      }
+    }
+
+    subs.seekSet(subs.curPosition() - 2);
+  }
 }
 
 long calculate_from_time(String timestamps, long from_times[4]) {
-    from_times[0] = timestamps.substring(0, 2).toInt();
-    from_times[1] = timestamps.substring(3, 5).toInt();
-    from_times[2] = timestamps.substring(6, 8).toInt();
-    from_times[3] = timestamps.substring(9, 12).toInt();
+  from_times[0] = timestamps.substring(0, 2).toInt();
+  from_times[1] = timestamps.substring(3, 5).toInt();
+  from_times[2] = timestamps.substring(6, 8).toInt();
+  from_times[3] = timestamps.substring(9, 12).toInt();
 
-    long from_time = (from_times[0] * 3600000) +
-        (from_times[1] * 60000) +
-        (from_times[2] * 1000) +
-        (from_times[3]);
+  long from_time = (from_times[0] * 3600000) +
+    (from_times[1] * 60000) +
+    (from_times[2] * 1000) +
+    (from_times[3]);
 
-    return from_time;
+  return from_time;
 }
 
 long calculate_to_time(String timestamps, long to_times[4]) {
-    to_times[0] = timestamps.substring(17, 19).toInt();
-    to_times[1] = timestamps.substring(20, 22).toInt();
-    to_times[2] = timestamps.substring(23, 25).toInt();
-    to_times[3] = timestamps.substring(26, 29).toInt();
+  to_times[0] = timestamps.substring(17, 19).toInt();
+  to_times[1] = timestamps.substring(20, 22).toInt();
+  to_times[2] = timestamps.substring(23, 25).toInt();
+  to_times[3] = timestamps.substring(26, 29).toInt();
 
-    long to_time = (to_times[0] * 3600000) +
-        (to_times[1] * 60000) +
-        (to_times[2] * 1000) +
-        (to_times[3]);
+  long to_time = (to_times[0] * 3600000) +
+    (to_times[1] * 60000) +
+    (to_times[2] * 1000) +
+    (to_times[3]);
 
-    return to_time;
+  return to_time;
 }
 
 struct subtitles_state calculate_diff(String timestamps) {
-    long from_times[4];
-    long from_time = calculate_from_time(timestamps, from_times);
-    long to_times[4];
-    long to_time = calculate_to_time(timestamps, to_times);
+  long from_times[4];
+  long from_time = calculate_from_time(timestamps, from_times);
+  long to_times[4];
+  long to_time = calculate_to_time(timestamps, to_times);
 
-    long subtitles_diff = (to_times[0] - from_times[0]) * 3600000 +
-        (to_times[1] - from_times[1]) * 60000 +
-        (to_times[2] - from_times[2]) * 1000 +
-        (to_times[3] - from_times[3]);
+  long subtitles_diff = (to_times[0] - from_times[0]) * 3600000 +
+    (to_times[1] - from_times[1]) * 60000 +
+    (to_times[2] - from_times[2]) * 1000 +
+    (to_times[3] - from_times[3]);
 
-    return {from_time, to_time, subtitles_diff};
+  return {from_time, to_time, subtitles_diff};
 }
 
 String clean_formatting(String message) {
-    message.replace("<b>", "");
-    message.replace("</b>", "");
-    message.replace("<i>", "");
-    message.replace("</i>", "");
-    message.replace("<u>", "");
-    message.replace("</u>", "");
-    message.replace("\r", "");
+  const char* tags[] = {
+    "<b>", "</b>",
+    "<i>", "</i>",
+    "<u>", "</u>"
+  };
 
-    return message;
+  for (const char* tag : tags) {
+    message.replace(tag, "");
+  }
+
+  message.replace("\r", "");
+  return message;
 }
 
 String word_wrap(String message) {
-    unsigned int cur_pos = 0;
-    if (message.length() > MAX_CHAR_PER_LINE) {
-        do {
-            if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') {
-                cur_pos = message.substring(0, cur_pos).lastIndexOf(' ');
-            }
-            message[cur_pos] = '\n';
-            cur_pos += MAX_CHAR_PER_LINE;
-        } while (cur_pos <= message.length());
-    }
+  unsigned int cur_pos = 0;
+  if (message.length() > MAX_CHAR_PER_LINE) {
+    do {
+      if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') {
+        cur_pos = message.substring(0, cur_pos).lastIndexOf(' ');
+      }
+      message[cur_pos] = '\n';
+      cur_pos += MAX_CHAR_PER_LINE;
+    } while (cur_pos <= message.length());
+  }
 
-    message.replace(String(" -"), String("\n-"));
+  message.replace(String(" -"), String("\n-"));
 
-    return message;
+  return message;
 }
 
 int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &current_state, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long diff, long start_time, String message, String first_time) {
-    if (diff > 0) {
-        int input = 0;
+  if (diff > 0) {
+    int input = 0;
 
-        while ((micros() - (unsigned long)start_time) < (unsigned long)diff) {
-            input = checkButtons();
+    while ((micros() - (unsigned long)start_time) < (unsigned long)diff) {
+      input = checkButtons();
 
-            switch (input) {
-                case PB_A:
-                    OLED_printLine(first_time, MAX_ROWS - 1);
+      switch (input) {
+      case PB_A:
+        OLED_printLine(first_time, MAX_ROWS - 1);
 
-                    input = PB_NOT_PRESSED;
-                    while (input != PB_A) {
-                        input = checkButtons();
-                    }
-
-                    OLED_print(message);
-                    if (mode == GAP_MODE) {
-                        start_time = diff;
-                    } else {
-                        start_time = micros();
-                    }
-                    diff = current_state.subtitles_duration * 1000; // us
-                    break;
-
-                case PB_B:
-                    OLED_print(RESET_MESSAGE);
-                    return CLOSED_FILE_RETURN;
-                    break;
-
-                case PB_LEFT:
-                    // FIX: exit loop immediately and reset timing for previous subtitle
-                    for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
-                        if (current_state.from_time == periodic_times[i]) {
-                            if (i > 0) {
-                                subs.seekSet(periodic_pos[i - 1]);
-                            } else {
-                                subs.seekSet(0);
-                            }
-                            break;
-                        }
-                    }
-                    diff = 0;                    // <-- added
-                    before_calc_time = micros();  // <-- added
-                    break;
-
-                case PB_RIGHT:
-                    // FIX: exit loop immediately and reset timing for next subtitle
-                    diff = 0;                    // <-- added
-                    current_state.to_time = 0;   // avoid gap delay
-                    before_calc_time = micros();  // <-- added
-                    break;
-            }
+        input = PB_NOT_PRESSED;
+        while (input != PB_A) {
+          input = checkButtons();
         }
-    }
 
-    return 0;
+        OLED_print(message);
+        if (mode == GAP_MODE) {
+          start_time = diff;
+        } else {
+          start_time = micros();
+        }
+        diff = current_state.subtitles_duration * 1000; // us
+        break;
+
+      case PB_B:
+        OLED_print(RESET_MESSAGE);
+        return CLOSED_FILE_RETURN;
+        break;
+
+      case PB_LEFT:
+        // FIX: exit loop immediately and reset timing for previous subtitle
+        for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
+          if (current_state.from_time == periodic_times[i]) {
+            if (i > 0) {
+              subs.seekSet(periodic_pos[i - 1]);
+            } else {
+              subs.seekSet(0);
+            }
+            break;
+          }
+        }
+        diff = 0;                    // <-- added
+        before_calc_time = micros();  // <-- added
+        break;
+
+      case PB_RIGHT:
+        // FIX: exit loop immediately and reset timing for next subtitle
+        diff = 0;                    // <-- added
+        current_state.to_time = 0;   // avoid gap delay
+        before_calc_time = micros();  // <-- added
+        break;
+      }
+    }
+  }
+
+  return 0;
 }
 
 int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs, subtitles_state &current_state) {
-    if (before_calc_time == 0) {
-        before_calc_time = micros();
-    }
+  if (before_calc_time == 0) {
+    before_calc_time = micros();
+  }
 
-    read_next_line(subs);
+  read_next_line(subs);
 
-    String timestamps = read_next_line(subs);
-    long previous_to_time = 0;
-    if (current_state.to_time != 0) {
-        previous_to_time = current_state.to_time;
-    }
-    current_state = calculate_diff(timestamps); // ms
+  String timestamps = read_next_line(subs);
+  long previous_to_time = 0;
+  if (current_state.to_time != 0) {
+    previous_to_time = current_state.to_time;
+  }
+  current_state = calculate_diff(timestamps); // ms
 
-    unsigned int first_space = timestamps.indexOf(" ");
-    String first_time = timestamps.substring(0, first_space);
-    int gap = MAX_CHAR_PER_LINE - first_time.length() - 2;
-    for (int i = 0; i < gap; ++i) {
-        first_time += " ";
-    }
-    first_time += "||";
+  unsigned int first_space = timestamps.indexOf(" ");
+  String first_time = timestamps.substring(0, first_space);
+  int gap = MAX_CHAR_PER_LINE - first_time.length() - 2;
+  for (int i = 0; i < gap; ++i) {
+    first_time += " ";
+  }
+  first_time += "||";
 
-    String message;
-    String currentLine;
-    do {
-        currentLine = read_next_line(subs);
-        message += currentLine + " ";
-    } while (currentLine.length() > 1);
-    message = clean_formatting(message);
-    message = word_wrap(message);
+  String message;
+  String currentLine;
+  do {
+    currentLine = read_next_line(subs);
+    message += currentLine + " ";
+  } while (currentLine.length() > 1);
+  message = clean_formatting(message);
+  message = word_wrap(message);
 
-    long gap_diff = 0;
-    long start_time = 0;
-    if (previous_to_time != 0) {
-        start_time = micros();
-        gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time);
-
-        int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
-        if (return_code != 0) {
-            return return_code;
-        }
-
-        before_calc_time = micros();
-    }
-    OLED_print(message);
-
-    long subtitles_diff = 0;
+  long gap_diff = 0;
+  long start_time = 0;
+  if (previous_to_time != 0) {
     start_time = micros();
-    subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time);
+    gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time);
 
-    int return_code = subtitle_view_pushbuttons(SUBTITLES_MODE, subs, current_state, periodic_times, periodic_pos, subtitles_diff, start_time, message, first_time);
+    int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
     if (return_code != 0) {
-        return return_code;
+      return return_code;
     }
 
     before_calc_time = micros();
-    u8g2.clearDisplay();
+  }
+  OLED_print(message);
 
-    if ((long)subs.curPosition() == periodic_pos[amount_of_subs - 1]) {
-        return LAST_SUBTITLE_RETURN;
-    }
+  long subtitles_diff = 0;
+  start_time = micros();
+  subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time);
 
-    return 0;
+  int return_code = subtitle_view_pushbuttons(SUBTITLES_MODE, subs, current_state, periodic_times, periodic_pos, subtitles_diff, start_time, message, first_time);
+  if (return_code != 0) {
+    return return_code;
+  }
+
+  before_calc_time = micros();
+  u8g2.clearDisplay();
+
+  if ((long)subs.curPosition() == periodic_pos[amount_of_subs - 1]) {
+    return LAST_SUBTITLE_RETURN;
+  }
+
+  return 0;
 }
 
 unsigned int count_lines(SdFile& subs) {
-    unsigned int amount_of_lines = 0;
-    while (subs.available()) {
-        read_next_line(subs);
-        ++amount_of_lines;
-    }
+  unsigned int amount_of_lines = 0;
+  while (subs.available()) {
+    read_next_line(subs);
+    ++amount_of_lines;
+  }
 
-    subs.seekSet(0);
-    return amount_of_lines;
+  subs.seekSet(0);
+  return amount_of_lines;
 }
 
 unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
-    unsigned int periodic_idx = 0;
-    unsigned int current_line = 0;
-    unsigned int subs_counter = 0;
+  unsigned int periodic_idx = 0;
+  unsigned int current_line = 0;
+  unsigned int subs_counter = 0;
 
-    while (current_line < amount_of_lines) {
-        ++subs_counter;
+  while (current_line < amount_of_lines) {
+    ++subs_counter;
 
-        periodic_pos[periodic_idx] = subs.curPosition();
-        read_next_line(subs);
-        ++current_line;
+    periodic_pos[periodic_idx] = subs.curPosition();
+    read_next_line(subs);
+    ++current_line;
 
-        String timestamps = read_next_line(subs);
-        ++current_line;
+    String timestamps = read_next_line(subs);
+    ++current_line;
 
-        long from_times[4];
-        long from_time = calculate_from_time(timestamps, from_times);
-        periodic_times[periodic_idx] = from_time;
-        ++periodic_idx;
+    long from_times[4];
+    long from_time = calculate_from_time(timestamps, from_times);
+    periodic_times[periodic_idx] = from_time;
+    ++periodic_idx;
 
-        String currentLine;
-        do {
-            currentLine = read_next_line(subs);
-            ++current_line;
-        } while (currentLine.length() > 1);
-    }
+    String currentLine;
+    do {
+      currentLine = read_next_line(subs);
+      ++current_line;
+    } while (currentLine.length() > 1);
+  }
 
-    subs.seekSet(0);
-    return subs_counter;
+  subs.seekSet(0);
+  return subs_counter;
 }
 
