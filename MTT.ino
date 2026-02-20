@@ -1,4 +1,6 @@
 #define SD_CS 7
+#define OLED_RST 8
+
 #define SD_WAITING_MESSAGE "Waiting for SD"
 #define TIME_GREETING_MESSAGE "Select your desired time"
 #define RESET_MESSAGE "You may reset now"

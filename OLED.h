@@ -2,7 +2,6 @@
 #include <U8g2lib.h>
 #include <Wire.h>
 
-#define OLED_RST 8
 #define LINE_HEIGHT 8
 #define MAX_LINE_LENGTH 32
 #define NORMAL_FONT u8g2_font_5x7_tf
