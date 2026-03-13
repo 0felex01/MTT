@@ -53,8 +53,7 @@ long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
       break;
 
     case PB_A:
-      long from_times[4];
-      long from_time = calculate_from_time(current_timestamp, from_times);
+      long from_time = calculate_from_time(current_timestamp);
       return from_time;
       break;
 

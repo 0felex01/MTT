@@ -10,13 +10,12 @@
 #define GAP_MODE 1
 #define SUBTITLES_MODE 2
 
-unsigned long before_calc_time = 0; // us
-
-struct subtitles_state {
-  long from_time = 0;
-  long to_time = 0;
-  long subtitles_duration = 0;
-  bool paused = false;
+struct subtitle {
+  long index = 0;
+  long from_time = 0; // ms
+  long to_time = 0; // ms
+  long duration = 0; // ms
+  String dialogue = "";
 };
 
 String read_next_line(SdFile& subs) {
@@ -53,46 +52,38 @@ void go_to_prev_line(SdFile& subs) {
   }
 }
 
-long calculate_from_time(String timestamps, long from_times[4]) {
-  from_times[0] = timestamps.substring(0, 2).toInt();
-  from_times[1] = timestamps.substring(3, 5).toInt();
-  from_times[2] = timestamps.substring(6, 8).toInt();
-  from_times[3] = timestamps.substring(9, 12).toInt();
+long calculate_from_time(const String& timestamps) {
 
-  long from_time = (from_times[0] * 3600000) +
-    (from_times[1] * 60000) +
-    (from_times[2] * 1000) +
-    (from_times[3]);
+  const char* ts = timestamps.c_str();
 
-  return from_time;
+  int h  = (ts[0] - '0') * 10 + (ts[1] - '0');
+  int m  = (ts[3] - '0') * 10 + (ts[4] - '0');
+  int s  = (ts[6] - '0') * 10 + (ts[7] - '0');
+  int ms = (ts[9] - '0') * 100 +
+    (ts[10] - '0') * 10 +
+    (ts[11] - '0');
+
+  return (long)h * 3600000L +
+    (long)m * 60000L +
+    (long)s * 1000L +
+    ms;
 }
 
-long calculate_to_time(String timestamps, long to_times[4]) {
-  to_times[0] = timestamps.substring(17, 19).toInt();
-  to_times[1] = timestamps.substring(20, 22).toInt();
-  to_times[2] = timestamps.substring(23, 25).toInt();
-  to_times[3] = timestamps.substring(26, 29).toInt();
+long calculate_to_time(const String& timestamps) {
 
-  long to_time = (to_times[0] * 3600000) +
-    (to_times[1] * 60000) +
-    (to_times[2] * 1000) +
-    (to_times[3]);
+  const char* ts = timestamps.c_str() + 17;
 
-  return to_time;
-}
+  int h  = (ts[0] - '0') * 10 + (ts[1] - '0');
+  int m  = (ts[3] - '0') * 10 + (ts[4] - '0');
+  int s  = (ts[6] - '0') * 10 + (ts[7] - '0');
+  int ms = (ts[9] - '0') * 100 +
+    (ts[10] - '0') * 10 +
+    (ts[11] - '0');
 
-struct subtitles_state calculate_diff(String timestamps) {
-  long from_times[4];
-  long from_time = calculate_from_time(timestamps, from_times);
-  long to_times[4];
-  long to_time = calculate_to_time(timestamps, to_times);
-
-  long subtitles_diff = (to_times[0] - from_times[0]) * 3600000 +
-    (to_times[1] - from_times[1]) * 60000 +
-    (to_times[2] - from_times[2]) * 1000 +
-    (to_times[3] - from_times[3]);
-
-  return {from_time, to_time, subtitles_diff};
+  return (long)h * 3600000L +
+    (long)m * 60000L +
+    (long)s * 1000L +
+    ms;
 }
 
 String clean_formatting(String message) {
@@ -110,145 +101,133 @@ String clean_formatting(String message) {
   return message;
 }
 
+/* String word_wrap(String message) { */
+/*   unsigned int cur_pos = 0; */
+/*   if (message.length() > MAX_CHAR_PER_LINE) { */
+/*     do { */
+/*       if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') { */
+/*         cur_pos = message.substring(0, cur_pos).lastIndexOf(' '); */
+/*       } */
+/*       message[cur_pos] = '\n'; */
+/*       cur_pos += MAX_CHAR_PER_LINE; */
+/*     } while (cur_pos <= message.length()); */
+/*   } */
+
+/*   message.replace(String(" -"), String("\n-")); */
+
+/*   return message; */
+/* } */
+
 String word_wrap(String message) {
-  unsigned int cur_pos = 0;
-  if (message.length() > MAX_CHAR_PER_LINE) {
-    do {
-      if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') {
-        cur_pos = message.substring(0, cur_pos).lastIndexOf(' ');
-      }
-      message[cur_pos] = '\n';
-      cur_pos += MAX_CHAR_PER_LINE;
-    } while (cur_pos <= message.length());
-  }
-
-  message.replace(String(" -"), String("\n-"));
-
-  return message;
-}
-
-int subtitle_view_pushbuttons(unsigned int mode, SdFile& subs, subtitles_state &current_state, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long diff, long start_time, String message, String first_time) {
-  if (diff > 0) {
-    int input = 0;
-
-    while ((micros() - (unsigned long)start_time) < (unsigned long)diff) {
-      input = checkButtons();
-
-      switch (input) {
-      case PB_A:
-        OLED_printLine(first_time, MAX_ROWS - 1);
-
-        input = PB_NOT_PRESSED;
-        while (input != PB_A) {
-          input = checkButtons();
-        }
-
-        OLED_print(message);
-        if (mode == GAP_MODE) {
-          start_time = diff;
-        } else {
-          start_time = micros();
-        }
-        diff = current_state.subtitles_duration * 1000; // us
-        break;
-
-      case PB_B:
-        OLED_print(RESET_MESSAGE);
-        return CLOSED_FILE_RETURN;
-        break;
-
-      case PB_LEFT:
-        // FIX: exit loop immediately and reset timing for previous subtitle
-        for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
-          if (current_state.from_time == periodic_times[i]) {
-            if (i > 0) {
-              subs.seekSet(periodic_pos[i - 1]);
-            } else {
-              subs.seekSet(0);
-            }
+  String result = "";
+  
+  int lineStart = 0;
+  while (lineStart < message.length()) {
+    // Find the end of the current line or existing newline
+    int lineEnd = message.indexOf('\n', lineStart);
+    if (lineEnd == -1) lineEnd = message.length();
+    
+    String line = message.substring(lineStart, lineEnd);
+    
+    // Wrap the line if it's too long
+    int start = 0;
+    while (start < line.length()) {
+      int end = start + MAX_CHAR_PER_LINE;
+      if (end >= line.length()) {
+        end = line.length();
+      } else {
+        // Find last space or punctuation before max width
+        int wrapPos = -1;
+        for (int i = end; i > start; i--) {
+          char c = line[i];
+          if (c == ' ' || c == '?' || c == '.' || c == ',' || c == '!') {
+            wrapPos = i + 1; // include punctuation/space
             break;
           }
         }
-        diff = 0;                    // <-- added
-        before_calc_time = micros();  // <-- added
-        break;
-
-      case PB_RIGHT:
-        // FIX: exit loop immediately and reset timing for next subtitle
-        diff = 0;                    // <-- added
-        current_state.to_time = 0;   // avoid gap delay
-        before_calc_time = micros();  // <-- added
-        break;
+        if (wrapPos != -1) end = wrapPos;
       }
+      
+      result += line.substring(start, end);
+      result += '\n';
+      
+      start = end;
+      // Skip leading spaces
+      while (start < line.length() && line[start] == ' ') start++;
     }
+    
+    lineStart = lineEnd + 1; // skip past existing newline
   }
 
-  return 0;
+  // Replace " -" with "\n-" as before
+  result.replace(" -", "\n-");
+
+  return result;
 }
 
-int display_subs(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_subs, subtitles_state &current_state) {
-  if (before_calc_time == 0) {
-    before_calc_time = micros();
-  }
+void read_subtitle(subtitle &given_subtitle, SdFile& subs) {
+  // Subtitle index, skip
+  long index = read_next_line(subs).toInt();
+  given_subtitle.index = index;
 
-  read_next_line(subs);
-
+  // Timestamps
   String timestamps = read_next_line(subs);
-  long previous_to_time = 0;
-  if (current_state.to_time != 0) {
-    previous_to_time = current_state.to_time;
+  long from_time = calculate_from_time(timestamps);
+  long to_time = calculate_to_time(timestamps);
+  /* long subtitles_duration = to_time - from_time; */
+  given_subtitle.from_time = from_time;
+  given_subtitle.to_time = to_time;
+  long duration = to_time - from_time;
+  given_subtitle.duration = duration;
+
+  // Get all of the dialogue
+  String dialogue = "";
+  String current_read = "something";
+  while (current_read.length() > 1) {
+    current_read = read_next_line(subs);
+    dialogue += current_read + "\n";
   }
-  current_state = calculate_diff(timestamps); // ms
+  given_subtitle.dialogue = dialogue;
 
-  unsigned int first_space = timestamps.indexOf(" ");
-  String first_time = timestamps.substring(0, first_space);
-  int gap = MAX_CHAR_PER_LINE - first_time.length() - 2;
-  for (int i = 0; i < gap; ++i) {
-    first_time += " ";
-  }
-  first_time += "||";
+  return;
+}
 
-  String message;
-  String currentLine;
-  do {
-    currentLine = read_next_line(subs);
-    message += currentLine + " ";
-  } while (currentLine.length() > 1);
-  message = clean_formatting(message);
-  message = word_wrap(message);
+void transfer_subtitles(subtitle &first_subtitle, subtitle &second_subtitle) {
+  subtitle temp = first_subtitle;
+  first_subtitle = second_subtitle;
+  second_subtitle = temp;
+  second_subtitle.index = 0;
+}
 
-  long gap_diff = 0;
-  long start_time = 0;
-  if (previous_to_time != 0) {
-    start_time = micros();
-    gap_diff = ((current_state.from_time - previous_to_time) * 1000) - (micros() - before_calc_time);
+void debug_subs_print(long render_time, long wait_time, long display_time, long downtime) {
+  Serial.print("render_time: ");
+  Serial.print(render_time);
+  Serial.print(", ");
+  Serial.print("wait_time: ");
+  Serial.print(wait_time);
+  Serial.print(", ");
+  Serial.print("display_time: ");
+  Serial.print(display_time);
+  Serial.print(", ");
+  Serial.print("downtime: ");
+  Serial.println(downtime);
+}
 
-    int return_code = subtitle_view_pushbuttons(GAP_MODE, subs, current_state, periodic_times, periodic_pos, gap_diff, start_time, message, first_time);
-    if (return_code != 0) {
-      return return_code;
-    }
-
-    before_calc_time = micros();
-  }
-  OLED_print(message);
-
-  long subtitles_diff = 0;
-  start_time = micros();
-  subtitles_diff = (current_state.subtitles_duration * 1000) - (micros() - before_calc_time);
-
-  int return_code = subtitle_view_pushbuttons(SUBTITLES_MODE, subs, current_state, periodic_times, periodic_pos, subtitles_diff, start_time, message, first_time);
-  if (return_code != 0) {
-    return return_code;
-  }
-
-  before_calc_time = micros();
-  u8g2.clearDisplay();
-
-  if ((long)subs.curPosition() == periodic_pos[amount_of_subs - 1]) {
-    return LAST_SUBTITLE_RETURN;
-  }
-
-  return 0;
+void print_subtitle(subtitle &given_subtitle) {
+  Serial.print("index: ");
+  Serial.print(given_subtitle.index);
+  Serial.print(", ");
+  Serial.print("from_time: ");
+  Serial.print(given_subtitle.from_time);
+  Serial.print(", ");
+  Serial.print("to_time: ");
+  Serial.print(given_subtitle.to_time);
+  Serial.print(", ");
+  Serial.print("duration: ");
+  Serial.print(given_subtitle.duration);
+  Serial.print(", ");
+  Serial.print("dialogue: ");
+  Serial.println(given_subtitle.dialogue);
 }
 
 unsigned int count_lines(SdFile& subs) {
@@ -262,10 +241,10 @@ unsigned int count_lines(SdFile& subs) {
   return amount_of_lines;
 }
 
-unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
-  unsigned int periodic_idx = 0;
-  unsigned int current_line = 0;
-  unsigned int subs_counter = 0;
+long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
+  long periodic_idx = 0;
+  long current_line = 0;
+  long subs_counter = 0;
 
   while (current_line < amount_of_lines) {
     ++subs_counter;
@@ -277,8 +256,7 @@ unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], 
     String timestamps = read_next_line(subs);
     ++current_line;
 
-    long from_times[4];
-    long from_time = calculate_from_time(timestamps, from_times);
+    long from_time = calculate_from_time(timestamps);
     periodic_times[periodic_idx] = from_time;
     ++periodic_idx;
 
@@ -293,3 +271,132 @@ unsigned int gatherTimestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], 
   return subs_counter;
 }
 
+String make_paused_line(long timestamp) {
+  long hours = timestamp / 3600000;
+  timestamp %= 3600000;
+
+  long minutes = timestamp / 60000;
+  timestamp %= 60000;
+
+  long seconds = timestamp / 1000;
+  long millis = timestamp % 1000;
+
+  char buffer[19];
+  sprintf(buffer, "|| %02lu:%02lu:%02lu,%03lu", hours, minutes, seconds, millis);
+
+  return String(buffer);
+}
+
+bool check_pushbuttons(SdFile &subs, long &current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle &first_subtitle, subtitle &second_subtitle) {
+  // PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A, PB_NOT_PRESSED
+  bool changed = false; // This tells the device to stop tracking current subtitle timing and process the new subtitle
+  int c_PB = checkButtons();
+
+  switch (c_PB) {
+  case PB_LEFT:
+    if (current_subtitle_index > 1) { // Prevent going before the first subtitle
+      current_subtitle_index -= 2;
+      changed = true;
+    }
+    break;
+  case PB_RIGHT:
+    if (current_subtitle_index < amount_of_subs - 1) { // Prevent going after the last subtitle
+      changed = true;
+    }
+    break;
+  case PB_A: // Pause
+    int c_PB = checkButtons();
+    if (c_PB != PB_A) {
+      String paused_line = make_paused_line(periodic_times[current_subtitle_index - 1]);
+      OLED_printLine(paused_line, MAX_ROWS - 1);
+      while (c_PB != PB_A) {
+        /* delay(1); */
+        c_PB = checkButtons();
+      }
+
+      // Redraw current subtitle
+      current_subtitle_index -= 1;
+      changed = true;
+    }
+    break;
+  }
+
+  // Repopulate first and second subtitles
+  if (changed) {
+    u8g2.clearDisplay();
+
+    /* Serial.print(current_subtitle_index); */
+    /* Serial.print(", "); */
+    /* Serial.println(periodic_pos[current_subtitle_index]); */
+
+    subs.seekSet(periodic_pos[current_subtitle_index]);
+    read_subtitle(first_subtitle, subs);
+    read_subtitle(second_subtitle, subs);
+  }
+
+  return changed;
+}
+
+void display_subs(SdFile &subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long amount_of_subs, subtitle &first_subtitle, subtitle &second_subtitle) {
+  // first_subtitle and second_title are found beforehand to calculate subtitle to subtitle delay
+  // wait time is the time the device waits before it knows to start rendering a new subtitle
+  // this would include the subtitle display time and the wait time after the subtitle
+  // pausing should preserve the state of wait_time
+
+  // each time a subtitle is rendered, the second subtitle moves to the first.
+  // check if second subtitle is empty to continue the sliding window of subtitles
+
+  long render_time = 0; // MCU's micros right as it displays the subtitle, /ms
+  long wait_time = 0; // time that's used to keep track of when to blank the screen and when to progress to the next subtitle
+  long display_time = 0; // time the subtitle is displayed, ms
+  long downtime = 0; // downtime between subtitles, ms
+  long cycle_time = 0; // time of display_time and downtime combined
+  long current_subtitle_index = first_subtitle.index;
+  bool onscreen = false; // if it's true, check to see if subtitle should go off screen yet
+  bool changed = false;
+  while (current_subtitle_index < amount_of_subs) {
+    /* debug_subs_print(render_time, wait_time, display_time, downtime); */
+    /* Serial.println(changed); */
+
+    if (wait_time <= 0) { // Render next subtitle
+      /* Serial.println("First subtitle: "); */
+      /* print_subtitle(first_subtitle); */
+      /* Serial.println("Second subtitle: "); */
+      /* print_subtitle(second_subtitle); */
+
+      // Preparing dialogue
+      first_subtitle.dialogue = clean_formatting(first_subtitle.dialogue);
+      first_subtitle.dialogue = word_wrap(first_subtitle.dialogue);
+
+      // Times
+      display_time = first_subtitle.duration;
+      downtime = second_subtitle.from_time - first_subtitle.to_time;
+      cycle_time = display_time + downtime;
+      wait_time = cycle_time;
+
+      // On screen
+      OLED_print(first_subtitle.dialogue);
+      render_time = millis();
+
+      // Prepare for the next subtitle
+      transfer_subtitles(first_subtitle, second_subtitle);
+      read_subtitle(second_subtitle, subs);
+      ++current_subtitle_index;
+
+      onscreen = true;
+    } else if (onscreen) { // Clear display if enough time passed
+      wait_time = cycle_time - (millis() - render_time);
+      if (wait_time <= downtime) {
+        u8g2.clearDisplay();
+        onscreen = false;
+      }
+    } else { // downtime
+      wait_time = cycle_time - (millis() - render_time);
+    }
+
+    changed = check_pushbuttons(subs, current_subtitle_index, amount_of_subs, periodic_times, periodic_pos, first_subtitle, second_subtitle);
+    if (changed) {
+      wait_time = 0;
+    }
+  }
+}

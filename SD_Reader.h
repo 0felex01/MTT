@@ -1,7 +1,7 @@
 #include "KickSort.h"
 
-#define MAX_FILES 30
-#define MAX_ROWS 9
+#define MAX_FILES 8
+#define MAX_ROWS 8
 
 void redrawFiles(String files[MAX_FILES], int filesCount) {
     u8g2.clearBuffer();
@@ -19,7 +19,7 @@ int getFiles(String files[MAX_ROWS]) {
     while (file.openNext(&dir, O_READ) && filesCount < 30) {
         file.getName(buf, MAX_CHAR_PER_LINE);
         if (buf[0] != '.' && buf[0] != '\0') { // Ignore hidden files
-            Serial.println(buf);
+            /* Serial.println(buf); */
             files[filesCount] = String(buf);
             ++filesCount;
         }
@@ -27,7 +27,7 @@ int getFiles(String files[MAX_ROWS]) {
     dir.close();
     file.close();
 
-    // Sort alphabetically
+    // Sort files
     KickSort<String>::insertionSort(files, filesCount);
 
     // Strip .srt extensions

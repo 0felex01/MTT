@@ -56,11 +56,11 @@ void setup() {
   bool needRedraw = false;
 
   // Timestamps
-  long periodic_times[PERIODIC_SIZE];
+  long periodic_times[PERIODIC_SIZE]; // Used to go to the closest subtitle after user provides time
   for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
     periodic_times[i] = -1;
   }
-  long periodic_pos[PERIODIC_SIZE];
+  long periodic_pos[PERIODIC_SIZE]; // Used to go back and forth in subtitles
   for (unsigned int i = 0; i < PERIODIC_SIZE; ++i) {
     periodic_pos[i] = -1;
   }
@@ -93,8 +93,8 @@ void setup() {
 			SdFile subs;
 			subs.open(filename.c_str(), O_READ);
 
-			unsigned int amount_of_lines = count_lines(subs);
-			unsigned int amount_of_subs = gatherTimestamps(subs, periodic_times, periodic_pos, amount_of_lines);
+			long amount_of_lines = count_lines(subs);
+			long amount_of_subs = gather_timestamps(subs, periodic_times, periodic_pos, amount_of_lines);
 
 			// Prompt user to select time
 			String current_timestamp = INITAL_TIMESTAMP;
@@ -113,7 +113,7 @@ void setup() {
 			}
 
 			if (!skip_check) {
-				for (unsigned int i = 0; i < amount_of_subs; ++i) {
+				for (long i = 0; i < amount_of_subs; ++i) {
 					if (chosen_time < periodic_times[i]) {
 						subs.seekSet(periodic_pos[i - 1]);
 						break;
@@ -122,13 +122,21 @@ void setup() {
 			}
 
 			// Display subs
-			subtitles_state current_times;
-			int subs_status = 0;
-			while (subs_status == 0) {
-				subs_status = display_subs(subs, periodic_times, periodic_pos, amount_of_subs, current_times);
-			}
+			subtitle first_subtitle;
+			subtitle second_subtitle;
+			/* int subs_status = 0; */
+
+      // Populate first two subtitles then start rendering
+      if (first_subtitle.index == 0) {
+        read_subtitle(first_subtitle, subs);
+      }
+      if (second_subtitle.index == 0) {
+        read_subtitle(second_subtitle, subs);
+      }
+      display_subs(subs, periodic_times, periodic_pos, amount_of_subs, first_subtitle, second_subtitle);
 
 			subs.close();
+      Serial.println("End of subtitles");
 			break;
     }
 
