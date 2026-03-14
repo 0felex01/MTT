@@ -12,9 +12,9 @@
 
 struct subtitle {
   long index = 0;
-  long from_time = 0; // ms
-  long to_time = 0; // ms
-  long duration = 0; // ms
+  long from_time = 0;  // ms
+  long to_time = 0;    // ms
+  long duration = 0;   // ms
   String dialogue = "";
 };
 
@@ -26,7 +26,7 @@ String read_next_line(SdFile& subs) {
     data = subs.read();
     buf += char(data);
   } while (data >= 0 && (data != LINE_FEED && data != CARRIAGE_RETURN));
-  subs.read(); // Advance to next line
+  subs.read();  // Advance to next line
 
   return buf;
 }
@@ -56,34 +56,24 @@ long calculate_from_time(const String& timestamps) {
 
   const char* ts = timestamps.c_str();
 
-  int h  = (ts[0] - '0') * 10 + (ts[1] - '0');
-  int m  = (ts[3] - '0') * 10 + (ts[4] - '0');
-  int s  = (ts[6] - '0') * 10 + (ts[7] - '0');
-  int ms = (ts[9] - '0') * 100 +
-    (ts[10] - '0') * 10 +
-    (ts[11] - '0');
+  int h = (ts[0] - '0') * 10 + (ts[1] - '0');
+  int m = (ts[3] - '0') * 10 + (ts[4] - '0');
+  int s = (ts[6] - '0') * 10 + (ts[7] - '0');
+  int ms = (ts[9] - '0') * 100 + (ts[10] - '0') * 10 + (ts[11] - '0');
 
-  return (long)h * 3600000L +
-    (long)m * 60000L +
-    (long)s * 1000L +
-    ms;
+  return (long)h * 3600000L + (long)m * 60000L + (long)s * 1000L + ms;
 }
 
 long calculate_to_time(const String& timestamps) {
 
   const char* ts = timestamps.c_str() + 17;
 
-  int h  = (ts[0] - '0') * 10 + (ts[1] - '0');
-  int m  = (ts[3] - '0') * 10 + (ts[4] - '0');
-  int s  = (ts[6] - '0') * 10 + (ts[7] - '0');
-  int ms = (ts[9] - '0') * 100 +
-    (ts[10] - '0') * 10 +
-    (ts[11] - '0');
+  int h = (ts[0] - '0') * 10 + (ts[1] - '0');
+  int m = (ts[3] - '0') * 10 + (ts[4] - '0');
+  int s = (ts[6] - '0') * 10 + (ts[7] - '0');
+  int ms = (ts[9] - '0') * 100 + (ts[10] - '0') * 10 + (ts[11] - '0');
 
-  return (long)h * 3600000L +
-    (long)m * 60000L +
-    (long)s * 1000L +
-    ms;
+  return (long)h * 3600000L + (long)m * 60000L + (long)s * 1000L + ms;
 }
 
 String clean_formatting(String message) {
@@ -120,15 +110,15 @@ String clean_formatting(String message) {
 
 String word_wrap(String message) {
   String result = "";
-  
+
   int lineStart = 0;
   while (lineStart < message.length()) {
     // Find the end of the current line or existing newline
     int lineEnd = message.indexOf('\n', lineStart);
     if (lineEnd == -1) lineEnd = message.length();
-    
+
     String line = message.substring(lineStart, lineEnd);
-    
+
     // Wrap the line if it's too long
     int start = 0;
     while (start < line.length()) {
@@ -141,22 +131,22 @@ String word_wrap(String message) {
         for (int i = end; i > start; i--) {
           char c = line[i];
           if (c == ' ' || c == '?' || c == '.' || c == ',' || c == '!') {
-            wrapPos = i + 1; // include punctuation/space
+            wrapPos = i + 1;  // include punctuation/space
             break;
           }
         }
         if (wrapPos != -1) end = wrapPos;
       }
-      
+
       result += line.substring(start, end);
       result += '\n';
-      
+
       start = end;
       // Skip leading spaces
       while (start < line.length() && line[start] == ' ') start++;
     }
-    
-    lineStart = lineEnd + 1; // skip past existing newline
+
+    lineStart = lineEnd + 1;  // skip past existing newline
   }
 
   // Replace " -" with "\n-" as before
@@ -165,7 +155,7 @@ String word_wrap(String message) {
   return result;
 }
 
-void read_subtitle(subtitle &given_subtitle, SdFile& subs) {
+void read_subtitle(subtitle& given_subtitle, SdFile& subs) {
   // Subtitle index, skip
   long index = read_next_line(subs).toInt();
   given_subtitle.index = index;
@@ -192,7 +182,7 @@ void read_subtitle(subtitle &given_subtitle, SdFile& subs) {
   return;
 }
 
-void transfer_subtitles(subtitle &first_subtitle, subtitle &second_subtitle) {
+void transfer_subtitles(subtitle& first_subtitle, subtitle& second_subtitle) {
   subtitle temp = first_subtitle;
   first_subtitle = second_subtitle;
   second_subtitle = temp;
@@ -213,7 +203,7 @@ void debug_subs_print(long render_time, long wait_time, long display_time, long 
   Serial.println(downtime);
 }
 
-void print_subtitle(subtitle &given_subtitle) {
+void print_subtitle(subtitle& given_subtitle) {
   Serial.print("index: ");
   Serial.print(given_subtitle.index);
   Serial.print(", ");
@@ -287,38 +277,39 @@ String make_paused_line(long timestamp) {
   return String(buffer);
 }
 
-bool check_pushbuttons(SdFile &subs, long &current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle &first_subtitle, subtitle &second_subtitle) {
+bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle) {
   // PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A, PB_NOT_PRESSED
-  bool changed = false; // This tells the device to stop tracking current subtitle timing and process the new subtitle
+  bool changed = false;  // This tells the device to stop tracking current subtitle timing and process the new subtitle
   int c_PB = checkButtons();
 
   switch (c_PB) {
-  case PB_LEFT:
-    if (current_subtitle_index > 1) { // Prevent going before the first subtitle
-      current_subtitle_index -= 2;
-      changed = true;
-    }
-    break;
-  case PB_RIGHT:
-    if (current_subtitle_index < amount_of_subs - 1) { // Prevent going after the last subtitle
-      changed = true;
-    }
-    break;
-  case PB_A: // Pause
-    int c_PB = checkButtons();
-    if (c_PB != PB_A) {
-      String paused_line = make_paused_line(periodic_times[current_subtitle_index - 1]);
-      OLED_printLine(paused_line, MAX_ROWS - 1);
-      while (c_PB != PB_A) {
-        /* delay(1); */
-        c_PB = checkButtons();
+    case PB_LEFT:
+      if (current_subtitle_index > 0) {  // Prevent going before the first subtitle
+        current_subtitle_index -= 1;
+        changed = true;
       }
+      break;
+    case PB_RIGHT:
+      if (current_subtitle_index < amount_of_subs - 1) {  // Prevent going after the last subtitle
+        current_subtitle_index += 1;
+        changed = true;
+      }
+      break;
+    case PB_A:  // Pause
+      int c_PB = checkButtons();
+      if (c_PB != PB_A) {
+        String paused_line = make_paused_line(periodic_times[current_subtitle_index - 1]);
+        OLED_printLine(paused_line, MAX_ROWS - 1);
+        while (c_PB != PB_A) {
+          /* delay(1); */
+          c_PB = checkButtons();
+        }
 
-      // Redraw current subtitle
-      current_subtitle_index -= 1;
-      changed = true;
-    }
-    break;
+        // Redraw current subtitle
+        // current_subtitle_index -= 1;
+        changed = true;
+      }
+      break;
   }
 
   // Repopulate first and second subtitles
@@ -337,66 +328,67 @@ bool check_pushbuttons(SdFile &subs, long &current_subtitle_index, long amount_o
   return changed;
 }
 
-void display_subs(SdFile &subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long amount_of_subs, subtitle &first_subtitle, subtitle &second_subtitle) {
-  // first_subtitle and second_title are found beforehand to calculate subtitle to subtitle delay
-  // wait time is the time the device waits before it knows to start rendering a new subtitle
-  // this would include the subtitle display time and the wait time after the subtitle
-  // pausing should preserve the state of wait_time
+void adjust_wait_time(long* wait_time, long render_time, long* last_time, bool* just_rendered) {
+  if (*just_rendered) {
+    *wait_time -= millis() - render_time;
+    *just_rendered = false;
+  } else {
+    *wait_time -= millis() - *last_time;
+  }
+  *last_time = millis();
+}
 
-  // each time a subtitle is rendered, the second subtitle moves to the first.
-  // check if second subtitle is empty to continue the sliding window of subtitles
-
-  long render_time = 0; // MCU's micros right as it displays the subtitle, /ms
-  long wait_time = 0; // time that's used to keep track of when to blank the screen and when to progress to the next subtitle
-  long display_time = 0; // time the subtitle is displayed, ms
-  long downtime = 0; // downtime between subtitles, ms
-  long cycle_time = 0; // time of display_time and downtime combined
+void display_subs(SdFile& subs,
+                  long periodic_times[PERIODIC_SIZE],
+                  long periodic_pos[PERIODIC_SIZE],
+                  long amount_of_subs,
+                  subtitle& first_subtitle,
+                  subtitle& second_subtitle) {
+  long playback_start = millis();
+  long playback_offset = first_subtitle.from_time;
   long current_subtitle_index = first_subtitle.index;
-  bool onscreen = false; // if it's true, check to see if subtitle should go off screen yet
-  bool changed = false;
+  bool onscreen = false;
+
   while (current_subtitle_index < amount_of_subs) {
-    /* debug_subs_print(render_time, wait_time, display_time, downtime); */
-    /* Serial.println(changed); */
+    long now = millis();
+    long current_time = (now - playback_start) + playback_offset;
 
-    if (wait_time <= 0) { // Render next subtitle
-      /* Serial.println("First subtitle: "); */
-      /* print_subtitle(first_subtitle); */
-      /* Serial.println("Second subtitle: "); */
-      /* print_subtitle(second_subtitle); */
-
-      // Preparing dialogue
+    // render subtitle
+    if (!onscreen && current_time >= first_subtitle.from_time) {
       first_subtitle.dialogue = clean_formatting(first_subtitle.dialogue);
       first_subtitle.dialogue = word_wrap(first_subtitle.dialogue);
 
-      // Times
-      display_time = first_subtitle.duration;
-      downtime = second_subtitle.from_time - first_subtitle.to_time;
-      cycle_time = display_time + downtime;
-      wait_time = cycle_time;
-
-      // On screen
       OLED_print(first_subtitle.dialogue);
-      render_time = millis();
-
-      // Prepare for the next subtitle
-      transfer_subtitles(first_subtitle, second_subtitle);
-      read_subtitle(second_subtitle, subs);
-      ++current_subtitle_index;
-
       onscreen = true;
-    } else if (onscreen) { // Clear display if enough time passed
-      wait_time = cycle_time - (millis() - render_time);
-      if (wait_time <= downtime) {
-        u8g2.clearDisplay();
-        onscreen = false;
-      }
-    } else { // downtime
-      wait_time = cycle_time - (millis() - render_time);
     }
 
-    changed = check_pushbuttons(subs, current_subtitle_index, amount_of_subs, periodic_times, periodic_pos, first_subtitle, second_subtitle);
+    // take subtitle off screen if it's time
+    if (onscreen && current_time >= first_subtitle.to_time) {
+      u8g2.clearDisplay();
+      onscreen = false;
+
+      transfer_subtitles(first_subtitle, second_subtitle);
+      read_subtitle(second_subtitle, subs);
+
+      ++current_subtitle_index;
+    }
+
+    // Handle buttons
+    bool changed = check_pushbuttons(subs,
+                                     current_subtitle_index,
+                                     amount_of_subs,
+                                     periodic_times,
+                                     periodic_pos,
+                                     first_subtitle,
+                                     second_subtitle);
+
     if (changed) {
-      wait_time = 0;
+      Serial.println(current_subtitle_index);
+      playback_offset = first_subtitle.from_time;
+      playback_start = millis();
+      onscreen = false;
+
+      u8g2.clearDisplay();
     }
   }
 }
