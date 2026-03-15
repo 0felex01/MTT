@@ -328,16 +328,6 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
   return changed;
 }
 
-void adjust_wait_time(long* wait_time, long render_time, long* last_time, bool* just_rendered) {
-  if (*just_rendered) {
-    *wait_time -= millis() - render_time;
-    *just_rendered = false;
-  } else {
-    *wait_time -= millis() - *last_time;
-  }
-  *last_time = millis();
-}
-
 void display_subs(SdFile& subs,
                   long periodic_times[PERIODIC_SIZE],
                   long periodic_pos[PERIODIC_SIZE],

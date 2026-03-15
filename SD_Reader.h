@@ -2,6 +2,7 @@
 
 #define MAX_FILES 8
 #define MAX_ROWS 8
+#define MAX_FILENAME_LENGTH 100
 
 void redrawFiles(String files[MAX_FILES], int filesCount) {
     u8g2.clearBuffer();
@@ -15,10 +16,10 @@ int getFiles(String files[MAX_ROWS]) {
     File file;
     dir.open("/");
     int filesCount = 0;
-    char buf[MAX_CHAR_PER_LINE];
+    char buf[MAX_FILENAME_LENGTH];
     while (file.openNext(&dir, O_READ) && filesCount < 30) {
-        file.getName(buf, MAX_CHAR_PER_LINE);
-        if (buf[0] != '.' && buf[0] != '\0') { // Ignore hidden files
+        file.getName(buf, sizeof(buf));
+        if (buf[0] != '.' && buf[0] != '\0' && strcmp(buf, "System Volume Information")) { // Ignore hidden files and System Volume Information folder
             /* Serial.println(buf); */
             files[filesCount] = String(buf);
             ++filesCount;
