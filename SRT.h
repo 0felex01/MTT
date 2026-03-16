@@ -91,40 +91,25 @@ String clean_formatting(String message) {
   return message;
 }
 
-/* String word_wrap(String message) { */
-/*   unsigned int cur_pos = 0; */
-/*   if (message.length() > MAX_CHAR_PER_LINE) { */
-/*     do { */
-/*       if (message[cur_pos] != ' ' && message[cur_pos] != '?' && message[cur_pos] != '.' && message[cur_pos] != ',' && message[cur_pos] != '!') { */
-/*         cur_pos = message.substring(0, cur_pos).lastIndexOf(' '); */
-/*       } */
-/*       message[cur_pos] = '\n'; */
-/*       cur_pos += MAX_CHAR_PER_LINE; */
-/*     } while (cur_pos <= message.length()); */
-/*   } */
-
-/*   message.replace(String(" -"), String("\n-")); */
-
-/*   return message; */
-/* } */
-
 String word_wrap(String message) {
   String result = "";
 
-  int lineStart = 0;
-  while (lineStart < message.length()) {
+  unsigned int lineStart = 0;
+  unsigned int message_len = message.length();
+  while (lineStart < message_len) {
     // Find the end of the current line or existing newline
     int lineEnd = message.indexOf('\n', lineStart);
-    if (lineEnd == -1) lineEnd = message.length();
+    if (lineEnd == -1) lineEnd = message_len;
 
     String line = message.substring(lineStart, lineEnd);
+    unsigned int line_len = line.length();
 
     // Wrap the line if it's too long
     int start = 0;
-    while (start < line.length()) {
+    while ((unsigned int)start < line_len) {
       int end = start + MAX_CHAR_PER_LINE;
-      if (end >= line.length()) {
-        end = line.length();
+      if ((unsigned int)end >= line_len) {
+        end = line_len;
       } else {
         // Find last space or punctuation before max width
         int wrapPos = -1;
@@ -143,7 +128,7 @@ String word_wrap(String message) {
 
       start = end;
       // Skip leading spaces
-      while (start < line.length() && line[start] == ' ') start++;
+      while ((unsigned int)start < line_len && line[start] == ' ') start++;
     }
 
     lineStart = lineEnd + 1;  // skip past existing newline
@@ -231,7 +216,7 @@ unsigned int count_lines(SdFile& subs) {
   return amount_of_lines;
 }
 
-long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], unsigned int amount_of_lines) {
+long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long amount_of_lines) {
   long periodic_idx = 0;
   long current_line = 0;
   long subs_counter = 0;
