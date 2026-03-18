@@ -6,34 +6,25 @@
 #define PB_A 0
 #define PB_NOT_PRESSED -1
 
+const int buttons[] = {PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A};
+const int numButtons = 6;
+
+unsigned long lastPressTime = 0;
+const unsigned long debounceDelay = 200;
+
 int checkButtons() {
-    // delay is to move cursor more controllable
-    // TODO: find a better way to do this
+    unsigned long now = millis();
 
-    if (digitalRead(PB_LEFT) == LOW) {
-        delay(200);
-        return PB_LEFT;
-    }
-    if (digitalRead(PB_DOWN) == LOW) {
-        delay(200);
-        return PB_DOWN;
-    }
-    if (digitalRead(PB_UP) == LOW) {
-        delay(200);
-        return PB_UP;
-    }
-    if (digitalRead(PB_RIGHT) == LOW) {
-        delay(200);
-        return PB_RIGHT;
-    }
-    if (digitalRead(PB_B) == LOW) {
-        delay(200);
-        return PB_B;
-    }
-    if (digitalRead(PB_A) == LOW) {
-        delay(200);
-        return PB_A;
+    if (now - lastPressTime < debounceDelay) {
+        return PB_NOT_PRESSED;
     }
 
-    return PB_NOT_PRESSED; // Nothing pressed
+    for (int i = 0; i < numButtons; i++) {
+        if (digitalRead(buttons[i]) == LOW) {
+            lastPressTime = now;
+            return buttons[i];
+        }
+    }
+
+    return PB_NOT_PRESSED;
 }

@@ -40,7 +40,7 @@ void setup() {
 
   // // Init OLED
   OLED_begin();
-  u8g2.clearDisplay();
+  /* u8g2.clearDisplay(); */
 
   // Init SD
   SdFat sd;
@@ -52,14 +52,9 @@ void setup() {
   String files[MAX_FILES];
   int filesCount = getFiles(files);
   files[0] = cursor + files[0]; // Cursor on first file
-  u8g2.clearDisplay();
-  drawFiles(files, filesCount, locale);
-  drawLocale(locale);
-
-  /* japanese_print_example(); */
-  /* for (unsigned int i = 0; i < MAX_ROWS; i++) { */
-  /*   OLED_printLine("青い", i); */
-  /* } */
+  /* u8g2.clearDisplay(); */
+  drawFiles(files, filesCount, "EN");
+  drawLocale(locale, "EN");
 
   // File Select
   int input = 0;
@@ -101,6 +96,7 @@ void setup() {
     case PB_B:
       if (locale == "EN") {
         locale = "JP";
+        /* max_chars_per_line =  */
       } else {
         locale = "EN";
       }
@@ -120,7 +116,7 @@ void setup() {
 			String current_timestamp = INITAL_TIMESTAMP;
 			long chosen_time = 0;
 			cursor_pos = 0;
-			chosen_time = prompt_for_time(input, current_timestamp, cursor_pos, locale);
+			chosen_time = prompt_for_time(input, current_timestamp, cursor_pos, "EN");
 
 			// Skip to time
 			bool skip_check = false;  // If the time is 0 or longer than the last subtitle, don't bother checking
@@ -146,13 +142,6 @@ void setup() {
 			subtitle second_subtitle;
 			/* int subs_status = 0; */
 
-      // Apply locale
-      if (locale == "JP") {
-        u8g2.setFont(JAPANESE_FONT);
-      } else {
-        u8g2.setFont(ENGLISH_FONT);
-      }
-
       // Populate first two subtitles then start rendering
       if (first_subtitle.index == 0) {
         read_subtitle(first_subtitle, subs);
@@ -168,8 +157,8 @@ void setup() {
     }
 
     if (needRedraw) {
-      drawFiles(files, filesCount, locale);
-      drawLocale(locale);
+      drawFiles(files, filesCount, "EN");
+      drawLocale(locale, "EN");
       needRedraw = false;
     }
   }

@@ -100,13 +100,13 @@ void OLED_clear() {
   u8g2.sendBuffer();
 }
 
-void drawLocale(String locale) {
+void drawLocale(String text, String locale) {
   String locale_line = "";
   String spaces = "";
   for (unsigned int i = 0; i < MAX_CHAR_PER_LINE - locale.length() + 1; ++i) {
     spaces += " ";
   }
   locale_line += spaces;
-  locale_line += locale;
+  locale_line += text;
   OLED_printLine(locale_line, MAX_ROWS - 1, locale);
 }

@@ -262,7 +262,7 @@ String make_paused_line(long timestamp) {
   return String(buffer);
 }
 
-bool check_pushbuttons(SdFile& subs, String locale, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle) {
+bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle) {
   // PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A, PB_NOT_PRESSED
   bool changed = false;  // This tells the device to stop tracking current subtitle timing and process the new subtitle
   int c_PB = checkButtons();
@@ -284,7 +284,7 @@ bool check_pushbuttons(SdFile& subs, String locale, long& current_subtitle_index
     int c_PB = checkButtons();
     if (c_PB != PB_A) {
       String paused_line = make_paused_line(periodic_times[current_subtitle_index - 1]);
-      OLED_printLine(paused_line, MAX_ROWS - 1, locale);
+      OLED_printLine(paused_line, MAX_ROWS - 1, "EN");
       while (c_PB != PB_A) {
         /* delay(1); */
         c_PB = checkButtons();
@@ -299,11 +299,8 @@ bool check_pushbuttons(SdFile& subs, String locale, long& current_subtitle_index
 
   // Repopulate first and second subtitles
   if (changed) {
-    u8g2.clearDisplay();
-
-    /* Serial.print(current_subtitle_index); */
-    /* Serial.print(", "); */
-    /* Serial.println(periodic_pos[current_subtitle_index]); */
+    /* u8g2.clearDisplay(); */
+    u8g2.clearBuffer();
 
     subs.seekSet(periodic_pos[current_subtitle_index]);
     read_subtitle(first_subtitle, subs);
@@ -331,7 +328,7 @@ void display_subs(SdFile& subs,
 
     // render subtitle
     if (!onscreen && current_time >= first_subtitle.from_time) {
-      Serial.println(first_subtitle.dialogue);
+      /* Serial.println(first_subtitle.dialogue); */
       first_subtitle.dialogue = clean_formatting(first_subtitle.dialogue);
       first_subtitle.dialogue = word_wrap(first_subtitle.dialogue);
 
@@ -352,7 +349,6 @@ void display_subs(SdFile& subs,
 
     // Handle buttons
     bool changed = check_pushbuttons(subs,
-                                     locale,
                                      current_subtitle_index,
                                      amount_of_subs,
                                      periodic_times,
@@ -366,7 +362,7 @@ void display_subs(SdFile& subs,
       playback_start = millis();
       onscreen = false;
 
-      u8g2.clearDisplay();
+      /* u8g2.clearDisplay(); */
     }
   }
 }
