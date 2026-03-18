@@ -1,12 +1,12 @@
 #define TIME_PROMPT_CURSOR_SHAPE "-"
 
-long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
+long prompt_for_time(int input, String current_timestamp, int cursor_pos, String locale) {
   String cursor = String(TIME_PROMPT_CURSOR_SHAPE);
   unsigned int cursor_len = cursor.length();
 
-  OLED_print(TIME_GREETING_MESSAGE);
-  OLED_printLine(current_timestamp, 3);
-  OLED_printLine(cursor, 4);
+  OLED_print(TIME_GREETING_MESSAGE, locale);
+  OLED_printLine(current_timestamp, 3, locale);
+  OLED_printLine(cursor, 4, locale);
 
   while (true) {
     input = checkButtons();
@@ -16,8 +16,8 @@ long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
       if (current_timestamp[cursor_pos] != '0' && current_timestamp[cursor_pos] != ':') {
         current_timestamp[cursor_pos] -= 1;
         u8g2.clearDisplay();
-        OLED_print(TIME_GREETING_MESSAGE);
-        OLED_printLine(current_timestamp, 3);
+        OLED_print(TIME_GREETING_MESSAGE, locale);
+        OLED_printLine(current_timestamp, 3, locale);
       }
       break;
 
@@ -25,8 +25,8 @@ long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
       if (current_timestamp[cursor_pos] != '9' && current_timestamp[cursor_pos] != ':') {
         current_timestamp[cursor_pos] += 1;
         u8g2.clearDisplay();
-        OLED_print(TIME_GREETING_MESSAGE);
-        OLED_printLine(current_timestamp, 3);
+        OLED_print(TIME_GREETING_MESSAGE, locale);
+        OLED_printLine(current_timestamp, 3, locale);
       }
       break;
 
@@ -34,9 +34,9 @@ long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
       if (cursor_len > 1) {
         cursor = cursor.substring(1, cursor_len);
         u8g2.clearDisplay();
-        OLED_print(TIME_GREETING_MESSAGE);
-        OLED_printLine(current_timestamp, 3);
-        OLED_printLine(cursor, 4);
+        OLED_print(TIME_GREETING_MESSAGE, locale);
+        OLED_printLine(current_timestamp, 3, locale);
+        OLED_printLine(cursor, 4, locale);
         --cursor_pos;
       }
       break;
@@ -45,9 +45,9 @@ long prompt_for_time(int input, String current_timestamp, int cursor_pos) {
       if (cursor_len != current_timestamp.length()) {
         cursor = " " + cursor;
         u8g2.clearDisplay();
-        OLED_print(TIME_GREETING_MESSAGE);
-        OLED_printLine(current_timestamp, 3);
-        OLED_printLine(cursor, 4);
+        OLED_print(TIME_GREETING_MESSAGE, locale);
+        OLED_printLine(current_timestamp, 3, locale);
+        OLED_printLine(cursor, 4, locale);
         ++cursor_pos;
       }
       break;

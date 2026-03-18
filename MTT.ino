@@ -7,6 +7,7 @@
 #define CURSOR_SHAPE ">"
 #define SRT_FILE_EXTENSION ".srt"
 #define INITAL_TIMESTAMP "00:00:00:00"
+#define MAX_ROWS 8
 
 #include <Arduino.h>
 #include <U8g2lib.h>
@@ -26,6 +27,9 @@ void setup() {
 	// UI
 	String cursor = String(CURSOR_SHAPE);
 
+  // Locale
+  String locale = "EN";
+
   // Init PBs
   pinMode(PB_LEFT, INPUT_PULLUP);
   pinMode(PB_DOWN, INPUT_PULLUP);
@@ -40,15 +44,22 @@ void setup() {
 
   // Init SD
   SdFat sd;
-  OLED_print(SD_WAITING_MESSAGE);
+  OLED_print(SD_WAITING_MESSAGE, locale);
   while (!sd.begin(SD_CS, SPI_EIGHTH_SPEED));
-  // while (!sd.begin(SD_CS, SPI_DIV3_SPEED));
+  /* while (!sd.begin(SD_CS, SPI_DIV3_SPEED)); */
 
   // Read Files
   String files[MAX_FILES];
   int filesCount = getFiles(files);
   files[0] = cursor + files[0]; // Cursor on first file
-  redrawFiles(files, filesCount);
+  u8g2.clearDisplay();
+  drawFiles(files, filesCount, locale);
+  drawLocale(locale);
+
+  /* japanese_print_example(); */
+  /* for (unsigned int i = 0; i < MAX_ROWS; i++) { */
+  /*   OLED_printLine("青い", i); */
+  /* } */
 
   // File Select
   int input = 0;
@@ -87,6 +98,15 @@ void setup() {
 			}
 			break;
 
+    case PB_B:
+      if (locale == "EN") {
+        locale = "JP";
+      } else {
+        locale = "EN";
+      }
+      needRedraw = true;
+      break;
+
 		case PB_A:
 			String filename = files[cursor_pos].substring(1) + SRT_FILE_EXTENSION;
 
@@ -100,7 +120,7 @@ void setup() {
 			String current_timestamp = INITAL_TIMESTAMP;
 			long chosen_time = 0;
 			cursor_pos = 0;
-			chosen_time = prompt_for_time(input, current_timestamp, cursor_pos);
+			chosen_time = prompt_for_time(input, current_timestamp, cursor_pos, locale);
 
 			// Skip to time
 			bool skip_check = false;  // If the time is 0 or longer than the last subtitle, don't bother checking
@@ -126,6 +146,13 @@ void setup() {
 			subtitle second_subtitle;
 			/* int subs_status = 0; */
 
+      // Apply locale
+      if (locale == "JP") {
+        u8g2.setFont(JAPANESE_FONT);
+      } else {
+        u8g2.setFont(ENGLISH_FONT);
+      }
+
       // Populate first two subtitles then start rendering
       if (first_subtitle.index == 0) {
         read_subtitle(first_subtitle, subs);
@@ -133,7 +160,7 @@ void setup() {
       if (second_subtitle.index == 0) {
         read_subtitle(second_subtitle, subs);
       }
-      display_subs(subs, periodic_times, periodic_pos, amount_of_subs, first_subtitle, second_subtitle);
+      display_subs(subs, locale, periodic_times, periodic_pos, amount_of_subs, first_subtitle, second_subtitle);
 
 			subs.close();
       Serial.println("End of subtitles");
@@ -141,7 +168,8 @@ void setup() {
     }
 
     if (needRedraw) {
-      redrawFiles(files, filesCount);
+      drawFiles(files, filesCount, locale);
+      drawLocale(locale);
       needRedraw = false;
     }
   }
