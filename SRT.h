@@ -357,7 +357,7 @@ void display_subs(SdFile& subs,
                                      second_subtitle);
 
     if (changed) {
-      Serial.println(current_subtitle_index);
+      /* Serial.println(current_subtitle_index); */
       playback_offset = first_subtitle.from_time;
       playback_start = millis();
       onscreen = false;
