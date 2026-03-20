@@ -1,23 +1,25 @@
 # MTT (Movie-to-Text)
 Offline SRT Reader for Arduino Uno R4 WiFi
 
-# Implemented
-- SD card menu with cursor and pushbuttons support to pick file
-- Asks for time whenever picking a file to allow skipping to a time
-- Navigation during subtitles view and pausing
-- Blanks out display and waits between segments
-- Word wrapping
+Eventually capture footage of device in action and place here.
 
-# Things I could do
-- Fix the bottom right PCB hole of the RIGHT PB touching the ground trace.
-- Design simple PCB to replace protoboard mess, needed before 3D printing a case.
-- Fix the crash if the SRT file doesn't end with a new line.
-- Fix the word wrapping of consecutive dash lines.
-- Add navigation when paused.
-- Add proper reset function for Uno R4 WiFi.
-- Possible support for italics and other formatting?
-- Possible unicode font support for Japanese?
+# Equipment
+- [SD Card Reader](https://www.amazon.com/HiLetgo-Adater-Interface-Conversion-Arduino/dp/B07BJ2P6X6)
+- [OLED Display](https://www.amazon.com/DWEII-Display-SSD1309-Interface-Electronic/dp/B0B2R3RBKL)
+- [PowerBoost 1000C Battery Charger Circuit](https://www.adafruit.com/product/2465)
+- [3.7V 1000mAh Battery](https://www.amazon.com/1000mAh-Lithium-Polymer-Rechargeable-Connector/dp/B0C2KNZBPD)
 
-# TODO for next time
-- Make delay smaller
-- Fix rewind subtitles
+# Features
+- File selection
+- Timestamp selection
+- Pausing and resuming
+- Advancing and rewinding
+- Full English and Japanese subtitles support
+
+# Known Bugs
+- Timestamp selection cursor movement
+
+# Nice future ideas
+- Speed up file selection (may be bottlenecked by SPI speed)
+- Change how to process the newlines in each segment to better align with the smaller display
+- Get a bigger display

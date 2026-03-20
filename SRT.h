@@ -283,10 +283,10 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
   case PB_A:  // Pause
     int c_PB = checkButtons();
     if (c_PB != PB_A) {
-      String paused_line = make_paused_line(periodic_times[current_subtitle_index - 1]);
+      String paused_line = "";
+      paused_line = make_paused_line(periodic_times[current_subtitle_index]);
       OLED_printLine(paused_line, MAX_ROWS - 1, "EN");
       while (c_PB != PB_A) {
-        /* delay(1); */
         c_PB = checkButtons();
       }
 
@@ -319,7 +319,7 @@ void display_subs(SdFile& subs,
                   subtitle& second_subtitle) {
   long playback_start = millis();
   long playback_offset = first_subtitle.from_time;
-  long current_subtitle_index = first_subtitle.index;
+  long current_subtitle_index = first_subtitle.index - 1; // Fixes the incorrect initial index and immediate skip to next subtitle on first pause
   bool onscreen = false;
 
   while (current_subtitle_index < amount_of_subs) {

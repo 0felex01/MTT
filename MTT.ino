@@ -45,7 +45,8 @@ void setup() {
   // Init SD
   SdFat sd;
   OLED_print(SD_WAITING_MESSAGE, locale);
-  while (!sd.begin(SD_CS, SPI_EIGHTH_SPEED));
+  /* while (!sd.begin(SD_CS, SPI_EIGHTH_SPEED)); */
+  while (!sd.begin(SD_CS, SPI_HALF_SPEED));
   /* while (!sd.begin(SD_CS, SPI_DIV3_SPEED)); */
 
   // Read Files
@@ -109,8 +110,14 @@ void setup() {
 			SdFile subs;
 			subs.open(filename.c_str(), O_READ);
 
+      long first_time = millis();
 			long amount_of_lines = count_lines(subs);
+      Serial.print("count_lines: ");
+      Serial.println(millis() - first_time);
+      long second_time = millis();
 			long amount_of_subs = gather_timestamps(subs, periodic_times, periodic_pos, amount_of_lines);
+      Serial.print("gather_timestamps: ");
+      Serial.println(millis() - second_time);
 
 			// Prompt user to select time
 			String current_timestamp = INITAL_TIMESTAMP;
