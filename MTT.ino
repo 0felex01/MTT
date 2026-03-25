@@ -40,7 +40,6 @@ void setup() {
 
   // // Init OLED
   OLED_begin();
-  /* u8g2.clearDisplay(); */
 
   // Init SD
   SdFat sd;
@@ -53,7 +52,6 @@ void setup() {
   String files[MAX_FILES];
   int filesCount = getFiles(files);
   files[0] = cursor + files[0]; // Cursor on first file
-  /* u8g2.clearDisplay(); */
   drawFiles(files, filesCount, "EN");
   drawLocale(locale, "EN");
 
@@ -97,7 +95,6 @@ void setup() {
     case PB_B:
       if (locale == "EN") {
         locale = "JP";
-        /* max_chars_per_line =  */
       } else {
         locale = "EN";
       }
@@ -109,15 +106,7 @@ void setup() {
 
 			SdFile subs;
 			subs.open(filename.c_str(), O_READ);
-
-      long first_time = millis();
-			long amount_of_lines = count_lines(subs);
-      Serial.print("count_lines: ");
-      Serial.println(millis() - first_time);
-      long second_time = millis();
-			long amount_of_subs = gather_timestamps(subs, periodic_times, periodic_pos, amount_of_lines);
-      Serial.print("gather_timestamps: ");
-      Serial.println(millis() - second_time);
+			long amount_of_subs = gather_timestamps(subs, periodic_times, periodic_pos);
 
 			// Prompt user to select time
 			String current_timestamp = INITAL_TIMESTAMP;
@@ -147,7 +136,6 @@ void setup() {
 			// Display subs
 			subtitle first_subtitle;
 			subtitle second_subtitle;
-			/* int subs_status = 0; */
 
       // Populate first two subtitles then start rendering
       if (first_subtitle.index == 0) {

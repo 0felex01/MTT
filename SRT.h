@@ -205,23 +205,13 @@ void print_subtitle(subtitle& given_subtitle) {
   Serial.println(given_subtitle.dialogue);
 }
 
-unsigned int count_lines(SdFile& subs) {
-  unsigned int amount_of_lines = 0;
-  while (subs.available()) {
-    read_next_line(subs);
-    ++amount_of_lines;
-  }
-
-  subs.seekSet(0);
-  return amount_of_lines;
-}
-
-long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], long amount_of_lines) {
+long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE]) {
   long periodic_idx = 0;
   long current_line = 0;
   long subs_counter = 0;
 
-  while (current_line < amount_of_lines) {
+  /* while (current_line < amount_of_lines) { */
+  while (subs.available()) {
     ++subs_counter;
 
     periodic_pos[periodic_idx] = subs.curPosition();
@@ -291,7 +281,6 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
       }
 
       // Redraw current subtitle
-      // current_subtitle_index -= 1;
       changed = true;
     }
     break;
