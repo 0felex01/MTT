@@ -10,6 +10,9 @@
 #define GAP_MODE 1
 #define SUBTITLES_MODE 2
 
+#define SPEED_ADJUSTMENT_INCREMENTS 0.01
+#define STARTING_FRAMES 100
+
 struct subtitle {
   long index = 0;
   long from_time = 0;  // ms
@@ -252,12 +255,34 @@ String make_paused_line(long timestamp) {
   return String(buffer);
 }
 
-bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle) {
+bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle, float* speed, long* render_frames) {
   // PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A, PB_NOT_PRESSED
   bool changed = false;  // This tells the device to stop tracking current subtitle timing and process the new subtitle
   int c_PB = checkButtons();
+  String speed_line = "";
 
   switch (c_PB) {
+  case PB_DOWN: // adjusts speed
+  case PB_UP:
+    switch (c_PB) {
+    case PB_DOWN:
+      *speed -= SPEED_ADJUSTMENT_INCREMENTS;
+      break;
+    case PB_UP:
+      *speed += SPEED_ADJUSTMENT_INCREMENTS;
+      break;
+    }
+    speed_line = "current speed: " + String(*speed);
+    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
+    changed = true;
+    *render_frames = STARTING_FRAMES;
+    break;
+  case PB_B: // just display current speed
+    speed_line = "current speed: " + String(*speed);
+    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
+    changed = true;
+    *render_frames = STARTING_FRAMES;
+    break;
   case PB_LEFT:
     if (current_subtitle_index > 0) {  // Prevent going before the first subtitle
       current_subtitle_index -= 1;
@@ -286,6 +311,13 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     break;
   }
 
+  // Keep speed text on screen for X frames
+  if (*render_frames) {
+    speed_line = "current speed: " + String(*speed);
+    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
+    --(*render_frames);
+  }
+
   // Repopulate first and second subtitles
   if (changed) {
     /* u8g2.clearDisplay(); */
@@ -295,6 +327,8 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     read_subtitle(first_subtitle, subs);
     read_subtitle(second_subtitle, subs);
   }
+
+  /* Serial.println(*render_frames); */
 
   return changed;
 }
@@ -310,10 +344,12 @@ void display_subs(SdFile& subs,
   long playback_offset = first_subtitle.from_time;
   long current_subtitle_index = first_subtitle.index - 1; // Fixes the incorrect initial index and immediate skip to next subtitle on first pause
   bool onscreen = false;
+  float speed = 1.0;
+  long render_frames = 0;
 
   while (current_subtitle_index < amount_of_subs) {
     long now = millis();
-    long current_time = (now - playback_start) + playback_offset;
+    long current_time = ((now - playback_start) * speed) + playback_offset;
 
     // render subtitle
     if (!onscreen && current_time >= first_subtitle.from_time) {
@@ -343,7 +379,9 @@ void display_subs(SdFile& subs,
                                      periodic_times,
                                      periodic_pos,
                                      first_subtitle,
-                                     second_subtitle);
+                                     second_subtitle,
+                                     &speed,
+                                     &render_frames);
 
     if (changed) {
       /* Serial.println(current_subtitle_index); */
