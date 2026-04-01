@@ -328,8 +328,6 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     read_subtitle(second_subtitle, subs);
   }
 
-  /* Serial.println(*render_frames); */
-
   return changed;
 }
 

@@ -50,14 +50,14 @@ void setup() {
 
   // Read Files
   String files[MAX_FILES];
-  int filesCount = getFiles(files);
+  unsigned int filesCount = getFiles(files);
   files[0] = cursor + files[0]; // Cursor on first file
   drawFiles(files, filesCount, "EN");
   drawLocale(locale, "EN");
 
   // File Select
   int input = 0;
-  int cursor_pos = 0;
+  unsigned int cursor_pos = 0;
   bool needRedraw = false;
 
   // Timestamps
@@ -112,7 +112,7 @@ void setup() {
 			String current_timestamp = INITAL_TIMESTAMP;
 			long chosen_time = 0;
 			cursor_pos = 0;
-			chosen_time = prompt_for_time(input, current_timestamp, cursor_pos, "EN");
+			chosen_time = prompt_for_time(input, current_timestamp, "EN");
 
 			// Skip to time
 			bool skip_check = false;  // If the time is 0 or longer than the last subtitle, don't bother checking
