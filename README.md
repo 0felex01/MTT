@@ -16,10 +16,6 @@ Eventually capture footage of device in action and place here.
 - Advancing and rewinding
 - Full English and Japanese subtitles support
 
-# Known Bugs
-- Timestamp selection cursor movement
-
 # Nice future ideas
-- Speed up file selection (may be bottlenecked by SPI speed)
 - Change how to process the newlines in each segment to better align with the smaller display
-- Get a bigger display
+- Get a bigger display, further research indicates this may not be practical.
