@@ -10,7 +10,7 @@ const int buttons[] = {PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A};
 const int numButtons = 6;
 
 unsigned long lastPressTime = 0; // ms
-const unsigned long debounceDelay = 200; // ms
+const unsigned long debounceDelay = 150; // ms
 
 int checkButtons() {
   unsigned long now = millis();

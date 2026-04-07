@@ -1,3 +1,5 @@
+#include <Arduino.h>
+
 #define SD_CS 7
 #define OLED_RST 8
 
@@ -9,7 +11,17 @@
 #define INITAL_TIMESTAMP "00:00:00:00"
 #define MAX_ROWS 8
 
-#include <Arduino.h>
+uint8_t DISPLAY_HEIGHT = 64;
+uint8_t DISPLAY_WIDTH = 128;
+uint8_t TILE_HEIGHT = 8;
+uint8_t TILE_WIDTH = 8;
+uint8_t FONT_HEIGHT = 5;
+uint8_t DISPLAY_BOTTOM_ROW_TILE_X = 0;
+uint8_t DISPLAY_BOTTOM_ROW_TILE_Y = (DISPLAY_HEIGHT / TILE_HEIGHT - 1);
+uint8_t DISPLAY_BOTTOM_ROW_PIXEL_Y = (DISPLAY_BOTTOM_ROW_TILE_Y + 1) * TILE_HEIGHT;
+uint8_t DISPLAY_BOTTOM_ROW_AREA_WIDTH = DISPLAY_WIDTH / TILE_WIDTH;
+uint8_t DISPLAY_BOTTOM_ROW_AREA_HEIGHT = TILE_HEIGHT / TILE_HEIGHT;
+
 #include <U8g2lib.h>
 #include <SPI.h>
 #include <SdFat.h>

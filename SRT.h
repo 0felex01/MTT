@@ -273,7 +273,13 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
       break;
     }
     speed_line = "current speed: " + String(*speed);
-    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
+    /* OLED_printLine(speed_line, MAX_ROWS - 1, "EN"); */
+
+    /* Serial.println(DISPLAY_BOTTOM_ROW_TILE_X); */
+    /* Serial.println(DISPLAY_BOTTOM_ROW_TILE_Y); */
+    /* Serial.println(DISPLAY_BOTTOM_ROW_AREA_WIDTH); */
+    /* Serial.println(DISPLAY_BOTTOM_ROW_AREA_HEIGHT); */
+
     changed = true;
     *render_frames = STARTING_FRAMES;
     break;
@@ -300,12 +306,16 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     if (c_PB != PB_A) {
       String paused_line = "";
       paused_line = make_paused_line(periodic_times[current_subtitle_index]);
-      OLED_printLine(paused_line, MAX_ROWS - 1, "EN");
+      u8g2.clearBuffer();
+      u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, paused_line.c_str());
+      u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_BOTTOM_ROW_AREA_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+
       while (c_PB != PB_A) {
         c_PB = checkButtons();
       }
 
       // Redraw current subtitle
+      *render_frames = 0;
       changed = true;
     }
     break;
@@ -314,7 +324,10 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
   // Keep speed text on screen for X frames
   if (*render_frames) {
     speed_line = "current speed: " + String(*speed);
-    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
+    u8g2.clearBuffer();
+    u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, speed_line.c_str());
+    u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_BOTTOM_ROW_AREA_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+
     --(*render_frames);
   }
 

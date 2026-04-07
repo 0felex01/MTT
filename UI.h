@@ -62,7 +62,6 @@ long prompt_for_time(int input, String current_timestamp, String locale) {
       long from_time = calculate_from_time(current_timestamp);
       return from_time;
       break;
-
     }
 
     if (redraw_prompt) {
