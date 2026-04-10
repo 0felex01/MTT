@@ -7,21 +7,21 @@
 #define PB_NOT_PRESSED -1
 
 const int buttons[] = {PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A};
-const int numButtons = 6;
+const int num_buttons = 6;
 
-unsigned long lastPressTime = 0; // ms
-const unsigned long debounceDelay = 150; // ms
+unsigned long last_press_time = 0; // ms
+const unsigned long debounce_delay = 150; // ms
 
-int checkButtons() {
+int check_buttons() {
   unsigned long now = millis();
 
-  if (now - lastPressTime < debounceDelay) {
+  if (now - last_press_time < debounce_delay) {
     return PB_NOT_PRESSED;
   }
 
-  for (int i = 0; i < numButtons; i++) {
+  for (int i = 0; i < num_buttons; i++) {
     if (digitalRead(buttons[i]) == LOW) {
-      lastPressTime = now;
+      last_press_time = now;
       return buttons[i];
     }
   }

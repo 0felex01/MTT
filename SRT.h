@@ -97,14 +97,14 @@ String clean_formatting(String message) {
 String word_wrap(String message) {
   String result = "";
 
-  unsigned int lineStart = 0;
+  unsigned int line_start = 0;
   unsigned int message_len = message.length();
-  while (lineStart < message_len) {
+  while (line_start < message_len) {
     // Find the end of the current line or existing newline
-    int lineEnd = message.indexOf('\n', lineStart);
-    if (lineEnd == -1) lineEnd = message_len;
+    int line_end = message.indexOf('\n', line_start);
+    if (line_end == -1) line_end = message_len;
 
-    String line = message.substring(lineStart, lineEnd);
+    String line = message.substring(line_start, line_end);
     unsigned int line_len = line.length();
 
     // Wrap the line if it's too long
@@ -115,15 +115,15 @@ String word_wrap(String message) {
         end = line_len;
       } else {
         // Find last space or punctuation before max width
-        int wrapPos = -1;
+        int wrap_pos = -1;
         for (int i = end; i > start; i--) {
           char c = line[i];
           if (c == ' ' || c == '?' || c == '.' || c == ',' || c == '!') {
-            wrapPos = i + 1;  // include punctuation/space
+            wrap_pos = i + 1;  // include punctuation/space
             break;
           }
         }
-        if (wrapPos != -1) end = wrapPos;
+        if (wrap_pos != -1) end = wrap_pos;
       }
 
       result += line.substring(start, end);
@@ -134,7 +134,7 @@ String word_wrap(String message) {
       while ((unsigned int)start < line_len && line[start] == ' ') start++;
     }
 
-    lineStart = lineEnd + 1;  // skip past existing newline
+    line_start = line_end + 1;  // skip past existing newline
   }
 
   // Replace " -" with "\n-" as before
@@ -177,43 +177,11 @@ void transfer_subtitles(subtitle& first_subtitle, subtitle& second_subtitle) {
   second_subtitle.index = 0;
 }
 
-void debug_subs_print(long render_time, long wait_time, long display_time, long downtime) {
-  Serial.print("render_time: ");
-  Serial.print(render_time);
-  Serial.print(", ");
-  Serial.print("wait_time: ");
-  Serial.print(wait_time);
-  Serial.print(", ");
-  Serial.print("display_time: ");
-  Serial.print(display_time);
-  Serial.print(", ");
-  Serial.print("downtime: ");
-  Serial.println(downtime);
-}
-
-void print_subtitle(subtitle& given_subtitle) {
-  Serial.print("index: ");
-  Serial.print(given_subtitle.index);
-  Serial.print(", ");
-  Serial.print("from_time: ");
-  Serial.print(given_subtitle.from_time);
-  Serial.print(", ");
-  Serial.print("to_time: ");
-  Serial.print(given_subtitle.to_time);
-  Serial.print(", ");
-  Serial.print("duration: ");
-  Serial.print(given_subtitle.duration);
-  Serial.print(", ");
-  Serial.print("dialogue: ");
-  Serial.println(given_subtitle.dialogue);
-}
-
 long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE]) {
   long periodic_idx = 0;
   long current_line = 0;
   long subs_counter = 0;
 
-  /* while (current_line < amount_of_lines) { */
   while (subs.available()) {
     ++subs_counter;
 
@@ -228,11 +196,11 @@ long gather_timestamps(SdFile& subs, long periodic_times[PERIODIC_SIZE], long pe
     periodic_times[periodic_idx] = from_time;
     ++periodic_idx;
 
-    String currentLine;
+    String current_message_line;
     do {
-      currentLine = read_next_line(subs);
+      current_message_line = read_next_line(subs);
       ++current_line;
-    } while (currentLine.length() > 1);
+    } while (current_message_line.length() > 1);
   }
 
   subs.seekSet(0);
@@ -258,7 +226,7 @@ String make_paused_line(long timestamp) {
 bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_of_subs, long periodic_times[PERIODIC_SIZE], long periodic_pos[PERIODIC_SIZE], subtitle& first_subtitle, subtitle& second_subtitle, float* speed, long* render_frames) {
   // PB_LEFT, PB_DOWN, PB_UP, PB_RIGHT, PB_B, PB_A, PB_NOT_PRESSED
   bool changed = false;  // This tells the device to stop tracking current subtitle timing and process the new subtitle
-  int c_PB = checkButtons();
+  int c_PB = check_buttons();
   String speed_line = "";
 
   switch (c_PB) {
@@ -273,19 +241,11 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
       break;
     }
     speed_line = "current speed: " + String(*speed);
-    /* OLED_printLine(speed_line, MAX_ROWS - 1, "EN"); */
-
-    /* Serial.println(DISPLAY_BOTTOM_ROW_TILE_X); */
-    /* Serial.println(DISPLAY_BOTTOM_ROW_TILE_Y); */
-    /* Serial.println(DISPLAY_BOTTOM_ROW_AREA_WIDTH); */
-    /* Serial.println(DISPLAY_BOTTOM_ROW_AREA_HEIGHT); */
 
     changed = true;
     *render_frames = STARTING_FRAMES;
     break;
   case PB_B: // just display current speed
-    speed_line = "current speed: " + String(*speed);
-    OLED_printLine(speed_line, MAX_ROWS - 1, "EN");
     changed = true;
     *render_frames = STARTING_FRAMES;
     break;
@@ -302,18 +262,14 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     }
     break;
   case PB_A:  // Pause
-    int c_PB = checkButtons();
+    int c_PB = check_buttons();
     if (c_PB != PB_A) {
       String paused_line = "";
       paused_line = make_paused_line(periodic_times[current_subtitle_index]);
-
-      u8g2.clearBuffer();
-      u8g2.setFont(ENGLISH_FONT);
-      u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, paused_line.c_str());
-      u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_TILE_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+      OLED_print_line(paused_line.c_str(), MAX_ROWS - 1, "EN");
 
       while (c_PB != PB_A) {
-        c_PB = checkButtons();
+        c_PB = check_buttons();
       }
 
       // Redraw current subtitle
@@ -326,10 +282,7 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
   // Keep speed text on screen for X frames
   if (*render_frames) {
     speed_line = "current speed: " + String(*speed);
-    u8g2.clearBuffer();
-    u8g2.setFont(ENGLISH_FONT);
-    u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, speed_line.c_str());
-    u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_TILE_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+    OLED_print_line(speed_line.c_str(), MAX_ROWS - 1, "EN");
 
     --(*render_frames);
   }
@@ -398,12 +351,9 @@ void display_subs(SdFile& subs,
                                      &render_frames);
 
     if (changed) {
-      /* Serial.println(current_subtitle_index); */
       playback_offset = first_subtitle.from_time;
       playback_start = millis();
       onscreen = false;
-
-      /* u8g2.clearDisplay(); */
     }
   }
 }

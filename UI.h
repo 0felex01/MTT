@@ -1,13 +1,13 @@
 #define TIME_PROMPT_CURSOR_SHAPE "-"
 
 void redraw_timestamp(String current_timestamp, char *cursor_line) {
-  OLED_printLine(current_timestamp, 3, "EN");
-  OLED_printLine(cursor_line, 4, "EN");
+  OLED_print_line(current_timestamp.c_str(), 3, "EN");
+  OLED_print_line(cursor_line, 4, "EN");
 }
 
 void render_prompt(String greeting_message, String current_timestamp, char *cursor_line) {
   u8g2.clearDisplay();
-  OLED_printLine(greeting_message, 1, "EN");
+  OLED_print_line(greeting_message.c_str(), 1, "EN");
   redraw_timestamp(current_timestamp, cursor_line);
 }
 
@@ -23,7 +23,7 @@ long prompt_for_time(int input, String current_timestamp) {
   render_prompt(TIME_GREETING_MESSAGE, current_timestamp, cursor_line);
 
   while (true) {
-    input = checkButtons();
+    input = check_buttons();
 
     switch (input) {
     case PB_DOWN:

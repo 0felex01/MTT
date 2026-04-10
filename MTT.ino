@@ -32,7 +32,6 @@ uint8_t DISPLAY_BOTTOM_ROW_AREA_HEIGHT = TILE_HEIGHT / TILE_HEIGHT;
 #include "UI.h"
 
 void setup() {
-  // TODO: debugging purposes - delete for production
   Serial.begin(921600);
   while (!Serial);
 
@@ -62,15 +61,15 @@ void setup() {
 
   // Read Files
   String files[MAX_FILES];
-  unsigned int filesCount = getFiles(files);
+  unsigned int files_count = get_files(files);
   files[0] = cursor + files[0]; // Cursor on first file
-  drawFiles(files, filesCount, "EN");
-  drawLocale(locale, "EN");
+  draw_files(files, files_count, "EN");
+  draw_locale(locale, "EN");
 
   // File Select
   int input = 0;
   unsigned int cursor_pos = 0;
-  bool needRedraw = false;
+  bool redraw = false;
 
   // Timestamps
   long periodic_times[PERIODIC_SIZE]; // Used to go to the closest subtitle after user provides time
@@ -84,36 +83,36 @@ void setup() {
 
   // Main Loop
   while (true) {
-    input = checkButtons();
+    input = check_buttons();
     switch (input) {
-		case PB_DOWN:
-			if (cursor_pos < MAX_ROWS && cursor_pos < (filesCount - 1)) {
+		case PB_DOWN: // Down one file
+			if (cursor_pos < MAX_ROWS && cursor_pos < (files_count - 1)) {
 				files[cursor_pos] = files[cursor_pos].substring(1);
 				++cursor_pos;
 				files[cursor_pos] = cursor + files[cursor_pos];
-				needRedraw = true;
+				redraw = true;
 			}
 			break;
 
-		case PB_UP:
+		case PB_UP: // Up one file
 			if (cursor_pos > 0) {
 				files[cursor_pos] = files[cursor_pos].substring(1);
 				--cursor_pos;
 				files[cursor_pos] = cursor + files[cursor_pos];
-				needRedraw = true;
+				redraw = true;
 			}
 			break;
 
-    case PB_B:
+    case PB_B: // Switch locale
       if (locale == "EN") {
         locale = "JP";
       } else {
         locale = "EN";
       }
-      needRedraw = true;
+      redraw = true;
       break;
 
-		case PB_A:
+		case PB_A: // Select file
 			String filename = files[cursor_pos].substring(1) + SRT_FILE_EXTENSION;
 
 			SdFile subs;
@@ -163,10 +162,10 @@ void setup() {
 			break;
     }
 
-    if (needRedraw) {
-      drawFiles(files, filesCount, "EN");
-      drawLocale(locale, "EN");
-      needRedraw = false;
+    if (redraw) {
+      draw_files(files, files_count, "EN");
+      draw_locale(locale, "EN");
+      redraw = false;
     }
   }
 }
