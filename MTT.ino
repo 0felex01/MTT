@@ -19,7 +19,7 @@ uint8_t FONT_HEIGHT = 5;
 uint8_t DISPLAY_BOTTOM_ROW_TILE_X = 0;
 uint8_t DISPLAY_BOTTOM_ROW_TILE_Y = (DISPLAY_HEIGHT / TILE_HEIGHT - 1);
 uint8_t DISPLAY_BOTTOM_ROW_PIXEL_Y = (DISPLAY_BOTTOM_ROW_TILE_Y + 1) * TILE_HEIGHT;
-uint8_t DISPLAY_BOTTOM_ROW_AREA_WIDTH = DISPLAY_WIDTH / TILE_WIDTH;
+uint8_t DISPLAY_TILE_WIDTH = DISPLAY_WIDTH / TILE_WIDTH;
 uint8_t DISPLAY_BOTTOM_ROW_AREA_HEIGHT = TILE_HEIGHT / TILE_HEIGHT;
 
 #include <U8g2lib.h>
@@ -124,7 +124,7 @@ void setup() {
 			String current_timestamp = INITAL_TIMESTAMP;
 			long chosen_time = 0;
 			cursor_pos = 0;
-			chosen_time = prompt_for_time(input, current_timestamp, "EN");
+			chosen_time = prompt_for_time(input, current_timestamp);
 
 			// Skip to time
 			bool skip_check = false;  // If the time is 0 or longer than the last subtitle, don't bother checking

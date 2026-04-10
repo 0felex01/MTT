@@ -1,13 +1,17 @@
 #define TIME_PROMPT_CURSOR_SHAPE "-"
 
-void render_prompt(String greeting_message, String current_timestamp, char *cursor_line, String locale) {
-  u8g2.clearDisplay();
-  OLED_print(greeting_message, locale);
-  OLED_printLine(current_timestamp, 3, locale);
-  OLED_printLine(cursor_line, 4, locale);
+void redraw_timestamp(String current_timestamp, char *cursor_line) {
+  OLED_printLine(current_timestamp, 3, "EN");
+  OLED_printLine(cursor_line, 4, "EN");
 }
 
-long prompt_for_time(int input, String current_timestamp, String locale) {
+void render_prompt(String greeting_message, String current_timestamp, char *cursor_line) {
+  u8g2.clearDisplay();
+  OLED_printLine(greeting_message, 1, "EN");
+  redraw_timestamp(current_timestamp, cursor_line);
+}
+
+long prompt_for_time(int input, String current_timestamp) {
   String cursor = String(TIME_PROMPT_CURSOR_SHAPE);
   unsigned cursor_pos = 0;
   bool redraw_prompt = false;
@@ -16,7 +20,7 @@ long prompt_for_time(int input, String current_timestamp, String locale) {
   memset(cursor_line + MAX_CHAR_PER_LINE, '\0', 1);
   cursor_line[0] = cursor.c_str()[0];
 
-  render_prompt(TIME_GREETING_MESSAGE, current_timestamp, cursor_line, locale);
+  render_prompt(TIME_GREETING_MESSAGE, current_timestamp, cursor_line);
 
   while (true) {
     input = checkButtons();
@@ -65,7 +69,7 @@ long prompt_for_time(int input, String current_timestamp, String locale) {
     }
 
     if (redraw_prompt) {
-      render_prompt(TIME_GREETING_MESSAGE, current_timestamp, cursor_line, locale);
+      redraw_timestamp(current_timestamp, cursor_line);
       redraw_prompt = false;
     }
   }

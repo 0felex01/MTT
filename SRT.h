@@ -306,9 +306,11 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
     if (c_PB != PB_A) {
       String paused_line = "";
       paused_line = make_paused_line(periodic_times[current_subtitle_index]);
+
       u8g2.clearBuffer();
+      u8g2.setFont(ENGLISH_FONT);
       u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, paused_line.c_str());
-      u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_BOTTOM_ROW_AREA_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+      u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_TILE_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
 
       while (c_PB != PB_A) {
         c_PB = checkButtons();
@@ -325,8 +327,9 @@ bool check_pushbuttons(SdFile& subs, long& current_subtitle_index, long amount_o
   if (*render_frames) {
     speed_line = "current speed: " + String(*speed);
     u8g2.clearBuffer();
+    u8g2.setFont(ENGLISH_FONT);
     u8g2.drawUTF8(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_PIXEL_Y, speed_line.c_str());
-    u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_BOTTOM_ROW_AREA_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
+    u8g2.updateDisplayArea(DISPLAY_BOTTOM_ROW_TILE_X, DISPLAY_BOTTOM_ROW_TILE_Y, DISPLAY_TILE_WIDTH, DISPLAY_BOTTOM_ROW_AREA_HEIGHT);
 
     --(*render_frames);
   }

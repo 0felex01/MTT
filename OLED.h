@@ -91,8 +91,22 @@ void OLED_print(const String& message, String locale) {
 }
 
 void OLED_printLine(const String& message, uint8_t line, String locale) {
-  OLED_drawLine(message.c_str(), line, locale);
-  u8g2.sendBuffer();
+  // JP and EN fonts have different heights
+  uint8_t height = 0;
+  if (locale == "JP") {
+    u8g2.setFont(JAPANESE_FONT);
+    height = 12;
+  } else {
+    u8g2.setFont(ENGLISH_FONT);
+    height = 8;
+  }
+
+  uint8_t y = (line + 1) * height - 1;
+    
+  u8g2.clearBuffer();
+  u8g2.drawUTF8(0, y, message.c_str());
+  u8g2.updateDisplayArea(0, line, DISPLAY_TILE_WIDTH, 1);
+  /* u8g2.sendBuffer(); */
 }
 
 void OLED_clear() {
