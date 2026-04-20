@@ -1,12 +1,23 @@
 #include "KickSort.h"
 
-#define MAX_FILES 8
+#define MAX_FILES 100
 #define MAX_FILENAME_LENGTH 100
+#define TOP_BOUND_CURSOR_ROW 3
 
-void draw_files(String files[MAX_FILES], int files_count, String locale) {
+void draw_files(String files[MAX_FILES], int files_count, int cursor_pos, String locale) {
   u8g2.clearBuffer();
-  for (int i = 0; i < files_count; ++i) {
-    OLED_print_line(files[i].c_str(), i, locale);
+  int files_i = 0;
+
+  if (files_count <= MAX_ROWS - 1 || cursor_pos < TOP_BOUND_CURSOR_ROW) {
+    files_i = 0;
+  } else if (cursor_pos >= TOP_BOUND_CURSOR_ROW) {
+    files_i = cursor_pos - TOP_BOUND_CURSOR_ROW + 1;
+  }
+
+  for (int i = 0; i < MAX_ROWS - 1; ++i) {
+    if (i < files_count) {
+      OLED_print_line(files[files_i + i].c_str(), i, locale);
+    }
   }
 }
 

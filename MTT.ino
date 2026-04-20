@@ -62,13 +62,13 @@ void setup() {
   // Read Files
   String files[MAX_FILES];
   unsigned int files_count = get_files(files);
+  unsigned int cursor_pos = 0;
   files[0] = cursor + files[0]; // Cursor on first file
-  draw_files(files, files_count, "EN");
+  draw_files(files, files_count, cursor_pos, "EN");
   draw_locale(locale, "EN");
 
   // File Select
   int input = 0;
-  unsigned int cursor_pos = 0;
   bool redraw = false;
 
   // Timestamps
@@ -86,7 +86,7 @@ void setup() {
     input = check_buttons();
     switch (input) {
 		case PB_DOWN: // Down one file
-			if (cursor_pos < MAX_ROWS && cursor_pos < (files_count - 1)) {
+			if (cursor_pos < (files_count - 1)) {
 				files[cursor_pos] = files[cursor_pos].substring(1);
 				++cursor_pos;
 				files[cursor_pos] = cursor + files[cursor_pos];
@@ -163,7 +163,7 @@ void setup() {
     }
 
     if (redraw) {
-      draw_files(files, files_count, "EN");
+      draw_files(files, files_count, cursor_pos, "EN");
       draw_locale(locale, "EN");
       redraw = false;
     }
