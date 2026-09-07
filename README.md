@@ -19,3 +19,4 @@ Eventually capture footage of device in action and place here.
 # Nice future ideas
 - Change how to process the newlines in each segment to better align with the smaller display
 - Get a bigger display, further research indicates this may not be practical.
+- Add .sub support
